@@ -5,9 +5,9 @@ group("arch") {
     ]
 }
 
-config("public") {
+config("kernel") {
     configs = []
     configs += [
-        "arm64:public",
+        "arm64:kernel",
     ]
 }

@@ -6,12 +6,11 @@ source_set(module_name) {
     ]
 
     configs = [
-        "//build/config:target_arch_flags",
-        "//build/config:public",
+        "//build/config:kernel",
     ]
 }
 
-config("public") {
+config("kernel") {
     include_dirs =  [ "./include" ]
     include_dirs += [ "./include/armv8-a" ]
     include_dirs += [ "./include/asm" ]

@@ -1,16 +1,7 @@
 import("//build/config/compiler.gni")
 
-config("public") {
+config("kernel") {
     configs = [
-        "//os:public",
+        "//os:kernel",
     ]
-}
-
-config("target_arch_flags") {
-    cflags_c = [ "-std=gnu99" ]
-    cflags_cc = [ "-std=gnu++17" ]
-    cflags = arch_flags
-    asmflags = cflags
-    asmflags += [ "-D__ASSEMBLY__" ]
-    defines = [ "GIT_VERSION=" ]
 }

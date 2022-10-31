@@ -5,9 +5,9 @@ group("os") {
     ]
 }
 
-config("public") {
+config("kernel") {
     configs = []
     configs += [
-        "arch:public",
+        "arch:kernel",
     ]
 }

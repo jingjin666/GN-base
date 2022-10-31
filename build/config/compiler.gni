@@ -22,3 +22,10 @@ arch_optimaztion_flags = []
 arch_flags  = arch_cpuflags + arch_cflags + debug_build_flags + arch_optimaztion_flags
 
 crossdev = "aarch64-none-elf-"
+
+cflags_c = [ "-std=gnu99" ]
+cflags_cc = [ "-std=gnu++17" ]
+cflags = arch_flags
+asmflags = cflags
+asmflags += [ "-D__ASSEMBLY__" ]
+defines = [ "GIT_VERSION=" ]
