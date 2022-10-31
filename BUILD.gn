@@ -1,0 +1,74 @@
+import("//build/config/compiler.gni")
+
+group("os_modules") {
+    deps = [ 
+        "//os",
+    ]
+}
+
+config("os_config") {
+    defines = []
+    ld_script = rebase_path("//os/linker.lds")
+    ldflags = [
+        "-g",
+        "-T",
+        "$ld_script"
+    ]
+}
+
+executable("os") {
+    configs = []
+    configs += [ ":os_config" ]
+
+    sources = []
+
+    deps = [
+        ":os_modules",
+    ]
+}
+
+target = "$root_out_dir/os.elf"
+target_elf = "$root_out_dir/image/os.elf"
+target_bin = "$root_out_dir/image/os.bin"
+target_hex = "$root_out_dir/image/os.hex"
+target_dump = "$root_out_dir/image/os.dump"
+
+copy("copy_os") {
+    deps = [ ":os" ]
+    sources = [ "$target" ]
+    outputs = [ "$target_elf" ]
+}
+
+action("build_image") {
+    deps = [
+        ":copy_os",
+    ]
+
+    script = "//build/py_script/elf_format.py"
+    sources = [
+        "$target_elf",
+    ]
+    
+    outputs = [
+        "$target_bin",
+        "$target_hex",
+        "$target_dump",
+    ]
+
+    args = [
+        "--format_tool",
+        "$crossdev",
+        "--elf",
+        rebase_path("$target_elf"),
+        "--bin",
+        rebase_path("$target_bin"),
+        "--hex",
+        rebase_path("$target_hex"),
+        "--dump",
+        rebase_path("$target_dump"),
+        "--dir",
+        rebase_path("$root_out_dir/image"),
+        "--flag",
+        "bd",
+    ]
+}

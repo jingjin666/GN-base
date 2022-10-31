@@ -1,0 +1,6 @@
+toolchain = "gcc"
+#toolchain = "clang"
+
+target_toolchain = "//build/toolchain:${toolchain}"
+
+set_default_toolchain(target_toolchain)

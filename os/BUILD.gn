@@ -1,0 +1,13 @@
+group("os") {
+    deps = []
+    deps += [
+        "arch",
+    ]
+}
+
+config("public") {
+    configs = []
+    configs += [
+        "arch:public",
+    ]
+}

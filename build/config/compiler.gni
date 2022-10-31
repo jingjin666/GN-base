@@ -1,0 +1,24 @@
+arch_cpuflags =  []
+arch_cpuflags =  [ "-mcpu=cortex-a53" ]
+
+arch_cflags = []
+arch_cflags = [ "-nostdlib",
+                "-nostdinc",
+                "-fno-builtin",
+                "-fno-common",
+                "-fno-stack-protector",
+                "-fno-strict-overflow",
+                "-fno-strict-aliasing" ]
+
+debug_build_flags =  []
+debug_build_flags =  [ "-g" ]
+debug_build_flags += [ "-Wall",
+                       "-Wstrict-prototypes",
+                       "-Wshadow",
+                       "-Wundef" ]
+
+arch_optimaztion_flags = []
+
+arch_flags  = arch_cpuflags + arch_cflags + debug_build_flags + arch_optimaztion_flags
+
+crossdev = "aarch64-none-elf-"

@@ -1,0 +1,13 @@
+group("arch") {
+    deps = []
+    deps += [
+        "arm64",
+    ]
+}
+
+config("public") {
+    configs = []
+    configs += [
+        "arm64:public",
+    ]
+}

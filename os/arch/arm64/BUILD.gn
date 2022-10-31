@@ -1,0 +1,18 @@
+module_name = get_path_info(rebase_path("."), "name")
+source_set(module_name) {
+    sources = [
+        "entry.S",
+        "setup.c",
+    ]
+
+    configs = [
+        "//build/config:target_arch_flags",
+        "//build/config:public",
+    ]
+}
+
+config("public") {
+    include_dirs =  [ "./include" ]
+    include_dirs += [ "./include/armv8-a" ]
+    include_dirs += [ "./include/asm" ]
+}
