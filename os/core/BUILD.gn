@@ -3,11 +3,7 @@ module_name = get_path_info(rebase_path("."), "name")
 group(module_name) {
     deps = []
     deps += [
-        "arch",
-        "test",
-        "lib",
-        "dev",
-        "core",
+        "init",
     ]
 }
 
@@ -17,10 +13,6 @@ config("kernel") {
     ]
     configs = []
     configs += [
-        "arch:kernel",
-        "test:kernel",
-        "lib:kernel",
-        "dev:kernel",
-        "core:kernel",
+        "init:kernel",
     ]
 }

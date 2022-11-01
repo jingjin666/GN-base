@@ -1,0 +1,23 @@
+module_name = get_path_info(rebase_path("."), "name")
+
+source_set(module_name) {
+    sources = [
+        "k_memcpy.c",
+        "k_memset.c",
+        "k_printf.c",
+        "k_sleep.c",
+        "k_strcmp.c",
+        "k_strcpy.c",
+        "k_strlen.c",
+        "k_strncpy.c",
+        "k_strnlen.c",
+        "k_srand.c",
+    ]
+    configs = [
+        "//build/config:kernel",
+    ]
+}
+
+config("kernel") {
+    include_dirs = [ "./include" ]
+}

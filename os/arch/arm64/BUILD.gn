@@ -1,8 +1,11 @@
 module_name = get_path_info(rebase_path("."), "name")
+
 source_set(module_name) {
     sources = [
         "entry.S",
         "setup.c",
+        "fpu.c",
+        "halt.c",
     ]
 
     configs = [

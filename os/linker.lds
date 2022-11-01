@@ -4,11 +4,26 @@ SECTIONS
 {
     . = 0x40000000;
 
-    .boot : AT(ADDR(.boot))
+    .boot.physic : AT(ADDR(.boot.physic))
     {
-        *(.boot)
+        *(.entry)
+        *(.boot.physic)
+        . = ALIGN(4096);
+        . += 4096;
+        boot_stack = .;
     }
 
+    . = ALIGN(4096);
+    .boot : AT(ADDR(.boot))
+    {
+        *(.boot);
+    }
+    .boot.data : AT(ADDR(.boot.data))
+    {
+        *(.boot.data);
+    }
+    
+    . = ALIGN(4096);
     .text :
     {
         *(.text*)
@@ -28,10 +43,6 @@ SECTIONS
     {
         *(.bss*)
     }
-
-    . = ALIGN(4096);
-    . += 4096;
-    boot_stack = .;
 
     /DISCARD/ :
     {

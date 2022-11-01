@@ -1,11 +1,14 @@
-#define BOOTPHYSIC __attribute__((section(".boot")))
+#include <chinos/config.h>
+
+#include <kernel.h>
+#include <k_stdio.h>
+#include <uart.h>
 
 void BOOTPHYSIC boot_setup_mmu(void)
 {
-    int i = 1;
-    int j = 2;
-    int k;
+    uart_init(UART_PBASE);
 
-    k = i + j;
+    kprintf("hallo world\n");
+    while(1);
 }
 

@@ -1,3 +1,4 @@
+#include <chinos/config.h>
 #include <system.h>
 
 // 重新命名x16寄存器为临时寄存器
@@ -5,7 +6,7 @@ tmp     .req    x16
 
 .global _start
 
-.section ".boot", "ax"
+.section ".entry", "ax"
 _start:
     // 当前异常等级
     mrs     tmp, CurrentEL
@@ -75,8 +76,16 @@ cache_disable_done:
     dsb     sy
     isb
 
+// MMU前设置C堆栈,注意此刻SP必须为物理地址
     adr     x1, boot_stack
     mov     sp, x1
 
+    // 使能浮点单元
+#ifdef CONFIG_ARCH_FPU
+    bl      fpu_init
+#endif
+
+    // MMU前的初始化工作
     bl      boot_setup_mmu
 
+    b       .

@@ -3,13 +3,13 @@ module_name = get_path_info(rebase_path("."), "name")
 group(module_name) {
     deps = []
     deps += [
-        "arm64",
+        "uart",
     ]
 }
 
 config("kernel") {
     configs = []
     configs += [
-        "arm64:kernel",
+        "uart:kernel",
     ]
 }
