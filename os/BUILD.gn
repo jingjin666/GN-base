@@ -2,6 +2,7 @@ group("os") {
     deps = []
     deps += [
         "arch",
+        "test",
     ]
 }
 
@@ -9,5 +10,6 @@ config("kernel") {
     configs = []
     configs += [
         "arch:kernel",
+        "test:kernel",
     ]
 }
