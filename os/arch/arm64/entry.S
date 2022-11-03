@@ -88,4 +88,28 @@ cache_disable_done:
     // MMU前的初始化工作
     bl      boot_setup_mmu
 
-    b       .
+    // 打开MMU
+    mrs     tmp, sctlr_el1
+    orr     tmp, tmp, #SCTLR_ELx_M
+    msr     sctlr_el1, tmp
+
+    // 设置MMU后设置C堆栈,注意此刻SP为虚拟地址
+    ldr     x0, = idlestack
+    ldr     x1, = CONFIG_IDLE_TASK_STACKSIZE
+    add     x0, x0, x1
+    mov     sp, x0
+
+    // 正式进入虚拟地址空间
+    ldr     x2, = mmu_enabled
+    br      x2
+
+mmu_enabled:
+    bl init_kernel
+
+    // 跳转到idle
+    bl idle
+    b .
+
+.section ".stack", "wa"
+idlestack:
+    .space CONFIG_IDLE_TASK_STACKSIZE

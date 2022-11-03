@@ -6,6 +6,8 @@ source_set(module_name) {
         "setup.c",
         "fpu.c",
         "halt.c",
+        "pagetable.c",
+        "idle.c",
     ]
 
     configs = [

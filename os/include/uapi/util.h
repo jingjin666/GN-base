@@ -13,6 +13,36 @@
 #error "Unkowned ARCH"
 #endif
 
+#ifdef __GNUC__
+#define offsetof(type, member) __builtin_offsetof(type, member)
+  /* The noreturn attribute informs GCC that the function will not return.
+   * C11 adds _Noreturn keyword (see stdnoreturn.h)
+   */
+#define noreturn_function __attribute__ ((noreturn))
+    
+  /* Code locate */
+#define locate_code(n) __attribute__ ((section(n)))
+    
+  /* Data alignment */
+#define aligned_data(n) __attribute__ ((aligned(n)))
+  
+  /* Data location */
+#define locate_data(n) __attribute__ ((section(n)))
+    
+  /* The packed attribute informs GCC that the structure elements are packed,
+   * ignoring other alignment rules.
+   */
+#define begin_packed_struct
+#define end_packed_struct __attribute__ ((packed))
+    
+  /* The unsued code or data */
+#define unused_code __attribute__((unused))
+#define unused_data __attribute__((unused))
+  
+#else
+#define offsetof(type, member) ((size_t)( (char *)&(((type *)0)->member) - (char *)0 ))
+#endif
+
 #define KB *1024
 #define MB *1024 KB
 
@@ -20,12 +50,6 @@
 #define lowbitsmask(x) (bitmask(x) - UL(1))
 
 #define align_to(size, align) ((((size) + (align) - 1) / (align))*(align))
-
-#if __GNUC__ > 3
-#define offsetof(type, member) __builtin_offsetof(type, member)
-#else
-#define offsetof(type, member) ((size_t)( (char *)&(((type *)0)->member) - (char *)0 ))
-#endif
 
 #define container_of(ptr, type, member) \
   ((type *)((uintptr_t)(ptr) - offsetof(type, member)))

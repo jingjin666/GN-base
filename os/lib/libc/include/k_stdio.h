@@ -12,5 +12,6 @@ struct va_format
 };
 
 void kprintf(const char *fmt, ...);
+void _kprintf(const char *fmt, ...);
 void kputs(const char *s);
 #endif
