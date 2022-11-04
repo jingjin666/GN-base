@@ -12,6 +12,7 @@
 #include <barrier.h>
 #include <pagetable.h>
 #include <uapi/util.h>
+#include <board.h>
 
 // 存放恒等映射和初始化映射的页表,这一阶段都使用段式映射,页表空间使用较小,这里初始化4M空间来进行存储管理
 #define EARLY_PGTABLE_NR_PAGES  1024
@@ -63,7 +64,6 @@ u64 BOOTPHYSIC early_pgtable_alloc(u64 size)
     for (int i = 0; i < EARLY_PGTABLE_NR_PAGES; i++) {
         if (early_pgtable_mem[i] == 0) {
             early_pgtable_mem[i] = 1;
-            kprintf("i = %d\n", i);
             return (u64)&early_pgtable_space[i * PAGE_SIZE];
         }
     }

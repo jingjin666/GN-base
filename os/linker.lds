@@ -29,6 +29,7 @@ SECTIONS
     boot_end = .;
     .text : AT(ADDR(.text) - 0xffffff8000000000 + 0x40000000)
     {
+        *(.vector);
         *(.text*)
     }
 

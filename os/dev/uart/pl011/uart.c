@@ -4,6 +4,12 @@
 
 #include <uart.h>
 
+#define UARTDR      0x000
+#define UARTFR      0x018
+
+#define UARTFR_TXFF (1 << 5)
+#define UARTFR_RXFE (1 << 4)
+
 static uart_dev_t pl011_dev;
 
 void uart_init(unsigned long base)

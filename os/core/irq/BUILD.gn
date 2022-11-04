@@ -2,9 +2,10 @@ module_name = get_path_info(rebase_path("."), "name")
 
 source_set(module_name) {
     sources = [
-        "init.c",
+        "irq_initialize.c",
+        "irq_dispatch.c",
+        "irq_attach.c",
     ]
-
     configs = [
         "//build/config:kernel",
     ]

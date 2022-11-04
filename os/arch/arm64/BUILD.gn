@@ -8,6 +8,8 @@ source_set(module_name) {
         "halt.c",
         "pagetable.c",
         "idle.c",
+        "cpu.c",
+        "vector.S",
     ]
 
     configs = [

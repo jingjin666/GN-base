@@ -3,18 +3,11 @@ module_name = get_path_info(rebase_path("."), "name")
 group(module_name) {
     deps = []
     deps += [
-        "init",
-        "irq",
     ]
 }
 
 config("kernel") {
     include_dirs = [
         "./include",
-    ]
-    configs = []
-    configs += [
-        "init:kernel",
-        "irq:kernel",
     ]
 }

@@ -3,17 +3,13 @@ module_name = get_path_info(rebase_path("."), "name")
 group(module_name) {
     deps = []
     deps += [
-        "uart",
-        "interrupt",
-        "timer",
+        "arm_generic",
     ]
 }
 
 config("kernel") {
     configs = []
     configs += [
-        "uart:kernel",
-        "interrupt:kernel",
-        "timer:kernel",
+        "arm_generic:kernel",
     ]
 }

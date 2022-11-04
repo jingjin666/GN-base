@@ -22,5 +22,6 @@ config("kernel") {
         "lib:kernel",
         "dev:kernel",
         "core:kernel",
+        "board:kernel",
     ]
 }
