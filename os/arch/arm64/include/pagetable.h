@@ -9,6 +9,7 @@
 #include <page-def.h>
 #include <pgtable-prot.h>
 #include <uapi/util.h>
+#include <board.h>
 
 /* PGD */
 /* 每个ENTRY包含512G内存区域 */
@@ -42,6 +43,23 @@ typedef struct pgtable_pte
     unsigned long entry[PTRS_PER_PTE];
 } aligned_data(PAGE_SIZE) pgtable_pte_t;
 
-int pg_map(pgd_t *pgd_p, u64 vaddr, u64 paddr, u64 size, u64 attr, u64 (*pg_alloc)(u64));
+typedef struct mem_region
+{
+    unsigned long pbase;
+    unsigned long vbase;
+    unsigned long size;
+} mem_region_t;
+
+static inline unsigned long vbase_to_pbase(unsigned long vbase)
+{
+    return vbase - RAM_VBASE + RAM_PBASE;
+}
+
+static inline unsigned long pbase_to_vbase(unsigned long pbase)
+{
+    return pbase - RAM_PBASE + RAM_VBASE;
+}
+
+int pg_map(pgd_t *pgd_p, unsigned long vaddr, unsigned long paddr, unsigned long size, unsigned long attr, unsigned long (*pg_alloc)(unsigned long));
 
 #endif

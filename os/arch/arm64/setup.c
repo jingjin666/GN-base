@@ -18,19 +18,13 @@
 #define EARLY_PGTABLE_NR_PAGES  1024
 #define EARLY_PGTABLE_MEM_SIZE  (PAGE_SIZE * EARLY_PGTABLE_NR_PAGES)
 
-typedef struct mem_region
-{
-    unsigned long pbase;
-    unsigned long vbase;
-    unsigned long size;
-} mem_region_t;
-
 /* Kernel内存空间映射 */
 const struct mem_region kernel_normal_ram[] = {
+
     {
-        .pbase = CONFIG_KERNEL_LOAD_ADDR,
-        .vbase = CONFIG_KERNEL_EXEC_ADDR,
-        .size = 0,
+        .pbase = RAM_PBASE,
+        .vbase = RAM_VBASE,
+        .size = RAM_SIZE,
     },
     {.size = 0}, // end of regions
 };
@@ -57,6 +51,17 @@ static void BOOTPHYSIC early_pgtable_mem_init(void)
 {
     k_memset(early_pgtable_space, 0, sizeof(early_pgtable_space));
     k_memset(early_pgtable_mem, 0, sizeof(early_pgtable_mem));
+}
+
+static u64 BOOTPHYSIC early_pgtable_mem_free(void)
+{
+   u64 free = 0;
+   for (int i = 0; i < EARLY_PGTABLE_NR_PAGES; i++) {
+        if (early_pgtable_mem[i] == 0) {
+            free++;
+        }
+   }
+   return free;
 }
 
 u64 BOOTPHYSIC early_pgtable_alloc(u64 size)
@@ -90,14 +95,14 @@ static void BOOTPHYSIC boot_identify_mapping(void)
 
 static void BOOTPHYSIC boot_initpgtable_mapping(void)
 {
-    extern unsigned long kernel_start;
-    extern unsigned long kernel_end;
+    //extern unsigned long kernel_start;
+    //extern unsigned long kernel_end;
     u64 vaddr, paddr, size, attr;
 
     // 映射内核普通内存
     vaddr = kernel_normal_ram[0].vbase;
     paddr = kernel_normal_ram[0].pbase;
-    size = (u64)&kernel_end - (u64)&kernel_start;
+    size = kernel_normal_ram[0].size;//(u64)&kernel_end - (u64)&kernel_start;
     attr = pgprot_val(PAGE_KERNEL_EXEC);
     kprintf("%s:%d#pg_map: %p, %p, %p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
     pg_map((pgd_t *)&identifymap_pg_dir, vaddr, paddr, size, attr, early_pgtable_alloc);
@@ -170,5 +175,8 @@ void BOOTPHYSIC boot_setup_mmu(void)
     early_pgtable_mem_init();
     boot_identify_mapping();
     boot_initpgtable_mapping();
+
+    u64 free_pg = early_pgtable_mem_free();
+    kprintf("early identify pgtable total pages = %d, free = %d\n", EARLY_PGTABLE_NR_PAGES, free_pg);
 }
 

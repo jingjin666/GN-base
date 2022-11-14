@@ -4,6 +4,7 @@
 #include <k_string.h>
 #include <k_stdio.h>
 #include <k_limits.h>
+#include <k_dtoa_engine.h>
 
 #include <uart.h>
 

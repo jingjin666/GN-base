@@ -5,6 +5,7 @@ group(module_name) {
     deps += [
         "init",
         "irq",
+        "mm",
     ]
 }
 
@@ -16,5 +17,6 @@ config("kernel") {
     configs += [
         "init:kernel",
         "irq:kernel",
+        "mm:kernel",
     ]
 }

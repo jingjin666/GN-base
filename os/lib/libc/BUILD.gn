@@ -12,6 +12,8 @@ source_set(module_name) {
         "k_strncpy.c",
         "k_strnlen.c",
         "k_srand.c",
+        "k_dtoa_data.c",
+        "k_dtoa_engine.c",
     ]
     configs = [
         "//build/config:kernel",
