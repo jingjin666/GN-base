@@ -11,6 +11,7 @@
 #include <pagetable.h>
 #include <generic_timer.h>
 #include <buddy.h>
+#include <gran.h>
 
 #include "init.h"
 
@@ -96,6 +97,46 @@ void init_image_info(void)
     dump_image_info(vbase_to_pbase((unsigned long)&kernel_end), RAM_SIZE  + vbase_to_pbase((unsigned long)&kernel_start), "Free RAM");
 }
 
+struct mm_gran *g_heap;
+struct graninfo g_heapinfo;
+
+static void mm_initialize(void)
+{
+    extern unsigned long kernel_end;
+    extern unsigned long kernel_start;
+
+    unsigned long p_heapstart = (unsigned long)&kernel_end;
+    unsigned long p_heapend = RAM_SIZE  + (unsigned long)&kernel_start;
+    size_t heapsize = p_heapend - p_heapstart;
+
+    kprintf("heapstart = %p, p_heapend = %p, heapsize = %p\n", p_heapstart, p_heapend, heapsize);
+    g_heap = gran_initialize((void *)p_heapstart, heapsize, PAGE_SHIFT, PAGE_SHIFT);
+    kprintf("g_heap = %p, heapstart = %p, ngranules = %d\n", g_heap, g_heap->heapstart, g_heap->ngranules);
+
+#if 0
+    // mm_gran test
+    void *addr1 ;
+    void *addr2 ;
+    void *addr3 ;
+    void *addr4 ;
+
+    addr1 = gran_alloc(g_heap, 1024);
+    kprintf("addr1 = %p\n", addr1);
+    addr2 = gran_alloc(g_heap, 1024);
+    kprintf("addr2 = %p\n", addr2);
+    addr3 = gran_alloc(g_heap, 1024);
+    kprintf("addr3 = %p\n", addr3);
+    addr4 = gran_alloc(g_heap, 1024);
+    kprintf("addr4 = %p\n", addr4);
+
+    gran_free(g_heap, addr1, 1024);
+    gran_free(g_heap, addr4, 1024);
+#endif
+
+    gran_dump(g_heap, &g_heapinfo);
+    kprintf("total page = %d, free page = %d, mx free page = %d\n", g_heapinfo.ngranules, g_heapinfo.nfree, g_heapinfo.mxfree);
+}
+
 void init_kernel(void)
 {
     // 必须最先执行
@@ -112,6 +153,9 @@ void init_kernel(void)
 
     // cpu初始化
     cpu_init();
+
+    // 物理内存管理初始化
+    mm_initialize();
 
     // 中断初始化
     kprintf("irq_initialize\n");
