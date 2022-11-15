@@ -34,6 +34,7 @@ SECTIONS
         *(.text*)
     }
 
+    . = ALIGN(4096);
     kernel_code_end = .;
     kernel_rodata_start = .;
     .rodata : AT(ADDR(.rodata) - 0xffffff8000000000 + 0x40000000)
@@ -71,5 +72,16 @@ SECTIONS
     {
         *(.note.gnu.build-id)
         *(.comment)
+    }
+}
+
+SECTIONS
+{
+    . = ALIGN(8);
+    .user :
+    {
+        user_start = .;
+        *(.user*)
+        user_end = .;
     }
 }

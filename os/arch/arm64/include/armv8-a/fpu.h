@@ -4,7 +4,7 @@
 #include <chinos/config.h>
 
 #include <k_stdint.h>
-#include <asm/const.h>
+#include <const.h>
 #include <instructionset.h>
 #include <registerset.h>
 #include <uapi/util.h>

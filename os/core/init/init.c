@@ -9,9 +9,11 @@
 #include <irq.h>
 #include <cpu.h>
 #include <pagetable.h>
+#include <addrspace.h>
 #include <generic_timer.h>
 #include <buddy.h>
 #include <gran.h>
+#include <idle.h>
 
 #include "init.h"
 
@@ -99,21 +101,10 @@ void init_image_info(void)
 
 struct mm_gran *g_heap;
 struct graninfo g_heapinfo;
+struct mem_region kernel_heap_region;
 
-static void mm_initialize(void)
+void mem_test(void)
 {
-    extern unsigned long kernel_end;
-    extern unsigned long kernel_start;
-
-    unsigned long p_heapstart = (unsigned long)&kernel_end;
-    unsigned long p_heapend = RAM_SIZE  + (unsigned long)&kernel_start;
-    size_t heapsize = p_heapend - p_heapstart;
-
-    kprintf("heapstart = %p, p_heapend = %p, heapsize = %p\n", p_heapstart, p_heapend, heapsize);
-    g_heap = gran_initialize((void *)p_heapstart, heapsize, PAGE_SHIFT, PAGE_SHIFT);
-    kprintf("g_heap = %p, heapstart = %p, ngranules = %d\n", g_heap, g_heap->heapstart, g_heap->ngranules);
-
-#if 0
     // mm_gran test
     void *addr1 ;
     void *addr2 ;
@@ -131,7 +122,26 @@ static void mm_initialize(void)
 
     gran_free(g_heap, addr1, 1024);
     gran_free(g_heap, addr4, 1024);
-#endif
+}
+
+static void mm_initialize(void)
+{
+    extern unsigned long kernel_end;
+    extern unsigned long kernel_start;
+
+    unsigned long p_heapstart = (unsigned long)&kernel_end;
+    unsigned long p_heapend = RAM_SIZE  + (unsigned long)&kernel_start;
+    size_t heapsize = p_heapend - p_heapstart;
+
+    kprintf("heapstart = %p, p_heapend = %p, heapsize = %p\n", p_heapstart, p_heapend, heapsize);
+    g_heap = gran_initialize((void *)p_heapstart, heapsize, PAGE_SHIFT, PAGE_SHIFT);
+    kprintf("g_heap = %p, heapstart = %p, ngranules = %d\n", g_heap, g_heap->heapstart, g_heap->ngranules);
+
+    kernel_heap_region.vbase = p_heapstart;
+    kernel_heap_region.pbase = vbase_to_pbase(p_heapstart);
+    kernel_heap_region.size = heapsize;
+
+    //mm_test()
 
     gran_dump(g_heap, &g_heapinfo);
     kprintf("total page = %d, free page = %d, mx free page = %d\n", g_heapinfo.ngranules, g_heapinfo.nfree, g_heapinfo.mxfree);
@@ -161,10 +171,33 @@ void init_kernel(void)
     kprintf("irq_initialize\n");
     irq_initialize();
 
+    // 地址空间初始化
+    kprintf("as_initialize\n");
+    as_initialize();
+
+#if 0
+    // 地址空间映射权限测试
+    // Data Abort
+    //extern unsigned long kernel_code_start;
+    //u64 *data = &kernel_code_start;
+    //kprintf("data = %p\n", *data);
+    //*data = 0x12345678;
+
+    // Instruction Abort
+    typedef void (*func)(void);
+    extern unsigned long kernel_rodata_start;
+    func ins = &kernel_rodata_start;
+    ins();
+#endif
+
     // timer初始化
     kprintf("timer_init\n");
     timer_init();
 
     // 打开中断
+    kprintf("enable global irq\n");
     arch_local_irq_enable();
+
+    // 进入idle任务
+    idle();
 }

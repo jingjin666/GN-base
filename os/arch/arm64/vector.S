@@ -36,6 +36,8 @@ invalid_vector_entry:
     b   .
 
 cur_el_sync:
+    bl      cel_sync_traps
+    eret
     b   .
 
 cur_el_irq:
@@ -44,13 +46,19 @@ cur_el_irq:
     b .
 
 cur_el_serr:
+    bl      cel_serr_traps
+    eret
     b   .
 
 lower_el_sync:
+    bl      lel_sync_traps
+    eret
     b .
 
 lower_el_irq:
     b .
 
 lower_el_serr:
+    bl      lel_serr_traps
+    eret
     b .

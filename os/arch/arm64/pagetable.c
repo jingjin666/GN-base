@@ -1,6 +1,7 @@
 #include <chinos/config.h>
 
 #include <kernel.h>
+#include <k_debug.h>
 #include <k_assert.h>
 #include <k_stdio.h>
 #include <k_stddef.h>
@@ -10,6 +11,21 @@
 #include <pgtable-prot.h>
 #include <page-def.h>
 #include <barrier.h>
+
+#include <pagetable.h>
+
+//#define KERNEL_PAGETABLE_DEBUG
+#ifdef KERNEL_PAGETABLE_DEBUG
+#define pagetable_dbg kdbg
+#define pagetable_err kerr
+#define pagetable_warn kwarn
+#define pagetable_info kinfo
+#else
+#define pagetable_dbg(fmt, ...)
+#define pagetable_err(fmt, ...)
+#define pagetable_warn(fmt, ...)
+#define pagetable_info(fmt, ...)
+#endif
 
 static int pte_map(pmd_t *pmd_p, u64 vaddr, u64 end, u64 paddr, u64 attr, u64 (*pg_alloc)(u64))
 {
@@ -25,9 +41,12 @@ static int pte_map(pmd_t *pmd_p, u64 vaddr, u64 end, u64 paddr, u64 attr, u64 (*
         // 把PTE添加到PMD页表描符中去
         *pmd = __pmd(pte_paddr | PMD_TYPE_TABLE);
         pte = (pte_t *)pte_paddr;
+        pagetable_dbg("non-exist pte = %p, pmd = %p\n", pte, *pmd);
     } else {
+        pagetable_dbg("exist pte %p\n", pmd_val(*pmd));
         // 存在PTE
         pte = (pte_t *)(pmd_val(*pmd) & PTE_ADDR_MASK);
+        pagetable_dbg("exist pte %p\n", pte);
     }
 
     // 获取PTE索引
@@ -35,7 +54,7 @@ static int pte_map(pmd_t *pmd_p, u64 vaddr, u64 end, u64 paddr, u64 attr, u64 (*
     // 更新PTE起始地址
     pte += idx;
 
-    //kprintf("idx = %d, pte = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pte, vaddr, paddr, end);
+    pagetable_dbg("pte_map:idx = %d, pte = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pte, vaddr, paddr, end);
 
     for (next = vaddr; next != end; pte++) {
         next = (next + PAGE_SIZE) & PAGE_MASK;
@@ -62,9 +81,12 @@ static int pmd_map(pud_t *pud_p, u64 vaddr, u64 end, u64 paddr, u64 attr, u64 (*
         // 把PMD添加到PUD页表描符中去
         *pud = __pud(pmd_paddr | PMD_TYPE_TABLE);
         pmd = (pmd_t *)pmd_paddr;
+        pagetable_dbg("pmd = %p, pud = %p\n", pmd, *pud);
     } else {
+        pagetable_dbg("exist pmd %p\n", pud_val(*pud));
         // 存在PMD
         pmd = (pmd_t *)(pud_val(*pud) & PTE_ADDR_MASK);
+        pagetable_dbg("exist pmd %p\n", pmd);
     }
 
     // 获取PMD索引
@@ -73,7 +95,7 @@ static int pmd_map(pud_t *pud_p, u64 vaddr, u64 end, u64 paddr, u64 attr, u64 (*
     // 更新PMD起始地址
     pmd += idx;
 
-    //kprintf("idx = %d, pmd = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pmd, vaddr, paddr, end);
+    pagetable_dbg("pmd_map:idx = %d, pmd = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pmd, vaddr, paddr, end);
 
     for (next = vaddr; next != end; pmd++) {
         next = (next + PMD_SIZE) & PMD_MASK;
@@ -81,9 +103,11 @@ static int pmd_map(pud_t *pud_p, u64 vaddr, u64 end, u64 paddr, u64 attr, u64 (*
 
         if ((vaddr | next | paddr) & ~SECTION_MASK) {
             // 使用页式映射
+            pagetable_dbg("page map: \n");
             pte_map(pmd, vaddr, next, paddr, attr, pg_alloc);
         } else {
             // 如果地址全部段对齐,使用段氏映射
+            pagetable_dbg("section map: va: %p, pa:%p, next:%p\n", vaddr, paddr, next);
             *pmd = __pmd(((paddr >> PMD_SHIFT) << PMD_SHIFT) | PMD_TYPE_SECT | (attr & ~PTE_TABLE_BIT));
         }
         paddr += next - vaddr;
@@ -119,7 +143,7 @@ static int pud_map(pgd_t *pgd_p, u64 vaddr, u64 end, u64 paddr, u64 attr, u64 (*
     // 更新PUD起始地址
     pud += idx;
 
-    //kprintf("idx = %d, pud = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pud, vaddr, paddr, end);
+    pagetable_dbg("pud_map:idx = %d, pud = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pud, vaddr, paddr, end);
 
     for (next = vaddr; next != end; pud++) {
         next = (next + PUD_SIZE) & PUD_MASK;
@@ -154,7 +178,7 @@ int pg_map(pgd_t *pgd_p, u64 vaddr, u64 paddr, u64 size, u64 attr, u64 (*pg_allo
     // 对齐结束地址
     end = align_to(vaddr + size, PAGE_SIZE);
 
-    //kprintf("idx = %d, pgd = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pgd, vaddr, paddr, end);
+    pagetable_dbg("pg_map:idx = %d, pgd = %p, vaddr = %p, paddr = %p, end = %p\n", idx, pgd, vaddr, paddr, end);
 
     for (next = vaddr; next != end; pgd++) {
         next = (next + PGDIR_SIZE) & PGDIR_MASK;
@@ -171,7 +195,7 @@ int pg_map(pgd_t *pgd_p, u64 vaddr, u64 paddr, u64 size, u64 attr, u64 (*pg_allo
     return ret;
 }
 
-void dump_pgtable_brief()
+void dump_pgtable_brief(void)
 {
 
 }

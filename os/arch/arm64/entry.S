@@ -104,11 +104,7 @@ cache_disable_done:
     br      x2
 
 mmu_enabled:
-    bl init_kernel
-
-    // 跳转到idle
-    bl idle
-    b .
+    b init_kernel
 
 .section ".stack", "wa"
 idlestack:

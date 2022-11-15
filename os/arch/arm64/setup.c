@@ -11,6 +11,7 @@
 #include <system.h>
 #include <barrier.h>
 #include <pagetable.h>
+#include <addrspace.h>
 #include <uapi/util.h>
 #include <board.h>
 
@@ -20,7 +21,6 @@
 
 /* Kernel内存空间映射 */
 const struct mem_region kernel_normal_ram[] = {
-
     {
         .pbase = RAM_PBASE,
         .vbase = RAM_VBASE,
@@ -79,15 +79,14 @@ static void BOOTPHYSIC boot_identify_mapping(void)
 {
     // 注意此刻内存环境都在物理地址空间下进行
     extern unsigned long boot_physic_start;
-    extern unsigned long boot_end;
-    u64 vaddr, paddr, end, size, attr;
+    //extern unsigned long boot_end;
+    u64 vaddr, paddr, size, attr;
 
     vaddr = (u64)&boot_physic_start;
     paddr = (u64)&boot_physic_start;
-    end = (u64)&boot_end;
-    size = end - paddr;
+    size = kernel_normal_ram[0].size;//(u64)&boot_end - (u64)&boot_physic_start;
     attr = pgprot_val(PAGE_KERNEL_EXEC);
-    kprintf("%s:%d#pg_map: %p, %p, %p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
+    kprintf("%s:%d#pg_map: va:%p, pa:%p, siza:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
     pg_map((pgd_t *)&identifymap_pg_dir, vaddr, paddr, size, attr, early_pgtable_alloc);
 
     //dump_pgtable_verbose((pgd_t *)&identifymap_pg_dir);
@@ -104,7 +103,7 @@ static void BOOTPHYSIC boot_initpgtable_mapping(void)
     paddr = kernel_normal_ram[0].pbase;
     size = kernel_normal_ram[0].size;//(u64)&kernel_end - (u64)&kernel_start;
     attr = pgprot_val(PAGE_KERNEL_EXEC);
-    kprintf("%s:%d#pg_map: %p, %p, %p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
+    kprintf("%s:%d#pg_map: va:%p, pa:%p, size:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
     pg_map((pgd_t *)&identifymap_pg_dir, vaddr, paddr, size, attr, early_pgtable_alloc);
 
     //dump_pgtable_verbose((pgd_t *)&identifymap_pg_dir);
@@ -114,11 +113,12 @@ static void BOOTPHYSIC boot_initpgtable_mapping(void)
     paddr = kernel_dev_ram[0].pbase;
     size = kernel_dev_ram[0].size;
     attr = PROT_SECT_DEVICE_nGnRE;
-    kprintf("%s:%d#pg_map: %p, %p, %p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
+    kprintf("%s:%d#pg_map: va:%p, pa:%p, size:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
     pg_map((pgd_t *)&identifymap_pg_dir, vaddr, paddr, size, attr, early_pgtable_alloc);
 
     //dump_pgtable_verbose((pgd_t *)&identifymap_pg_dir);
 
+    /* 注意此处需要使能TTBR0，打开MMU后，在进入虚拟地址空间前，任然还有一些代码运行于物理内存中 */
     /* TTBR0 */
     u64 ttbr0;
     MSR("TTBR0_EL1", (u64)&identifymap_pg_dir);

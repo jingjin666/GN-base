@@ -10,6 +10,8 @@ source_set(module_name) {
         "idle.c",
         "cpu.c",
         "vector.S",
+        "cache.c",
+        "traps.c",
     ]
 
     configs = [

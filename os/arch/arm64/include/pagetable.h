@@ -9,6 +9,8 @@
 #include <page-def.h>
 #include <pgtable-prot.h>
 #include <uapi/util.h>
+#include <instructionset.h>
+#include <barrier.h>
 #include <board.h>
 
 /* PGD */
@@ -42,13 +44,6 @@ typedef struct pgtable_pte
 {
     unsigned long entry[PTRS_PER_PTE];
 } aligned_data(PAGE_SIZE) pgtable_pte_t;
-
-typedef struct mem_region
-{
-    unsigned long pbase;
-    unsigned long vbase;
-    unsigned long size;
-} mem_region_t;
 
 static inline unsigned long vbase_to_pbase(unsigned long vbase)
 {
