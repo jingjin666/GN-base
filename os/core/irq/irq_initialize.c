@@ -28,3 +28,14 @@ void irq_initialize(void)
 
     gic_initialize();
 }
+
+void irq_enable(uint32_t irq)
+{
+    up_enable_irq(irq);
+}
+
+void irq_disable(uint32_t irq)
+{
+    up_disable_irq(irq);
+}
+

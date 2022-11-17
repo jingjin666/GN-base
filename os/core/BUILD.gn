@@ -6,6 +6,7 @@ group(module_name) {
         "init",
         "irq",
         "mm",
+        "sched",
     ]
 }
 
@@ -18,5 +19,6 @@ config("kernel") {
         "init:kernel",
         "irq:kernel",
         "mm:kernel",
+        "sched:kernel",
     ]
 }

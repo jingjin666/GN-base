@@ -12,6 +12,7 @@ source_set(module_name) {
         "vector.S",
         "cache.c",
         "traps.c",
+        "context.c",
     ]
 
     configs = [

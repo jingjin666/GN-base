@@ -9,8 +9,6 @@
 #include <page-def.h>
 #include <pgtable-prot.h>
 #include <uapi/util.h>
-#include <instructionset.h>
-#include <barrier.h>
 #include <board.h>
 
 /* PGD */

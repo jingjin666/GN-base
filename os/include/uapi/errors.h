@@ -6,8 +6,7 @@
 /* Definitions of error numbers and the string that would be
  * returned by strerror().
  */
-#define ESUCCESS            0
-#define ESUCCESS_STR        "Success"
+
 #define EPERM               1
 #define EPERM_STR           "Operation not permitted"
 #define ENOENT              2

@@ -14,6 +14,8 @@
 #include <buddy.h>
 #include <gran.h>
 #include <idle.h>
+#include <task.h>
+#include <scheduler.h>
 
 #include "init.h"
 
@@ -141,10 +143,51 @@ static void mm_initialize(void)
     kernel_heap_region.pbase = vbase_to_pbase(p_heapstart);
     kernel_heap_region.size = heapsize;
 
-    //mm_test()
+    //mm_test();
 
     gran_dump(g_heap, &g_heapinfo);
     kprintf("total page = %d, free page = %d, mx free page = %d\n", g_heapinfo.ngranules, g_heapinfo.nfree, g_heapinfo.mxfree);
+}
+
+static struct tcb idle_task;
+extern unsigned long idle_stack;
+static void idle_task_initialize(void)
+{
+    task_create(&idle_task, (task_entry)idle, "idle", CONFIG_MAX_TASK_PRIORITY-1, (void *)&idle_stack, CONFIG_IDLE_TASK_STACKSIZE);
+    sched_init(&idle_task);
+}
+
+static struct tcb kernel_task;
+static uint8_t kernel_stack[CONFIG_DEFAULT_TASK_STACKSIZE];
+void kernel_main(void)
+{
+    int k = 0;
+    while (1)
+    {
+        kprintf("kernel main k = %d\n", k++);
+        wfi();
+    }
+}
+
+static struct tcb kernel_task1;
+static uint8_t kernel_stack1[CONFIG_DEFAULT_TASK_STACKSIZE];
+void kernel_main1(void)
+{
+    int k = 50;
+    while (1)
+    {
+        kprintf("kernel main1 k = %d\n", k++);
+        wfi();
+    }
+}
+
+static void kernel_task_create(void)
+{
+    task_create(&kernel_task, (task_entry)kernel_main, "kernel task", CONFIG_DEFAULT_TASK_PRIORITY, (void *)kernel_stack, CONFIG_DEFAULT_TASK_STACKSIZE);
+    sched_attach(&kernel_task);
+
+    task_create(&kernel_task1, (task_entry)kernel_main1, "kernel task1", CONFIG_DEFAULT_TASK_PRIORITY, (void *)kernel_stack1, CONFIG_DEFAULT_TASK_STACKSIZE);
+    sched_attach(&kernel_task1);
 }
 
 void init_kernel(void)
@@ -190,6 +233,12 @@ void init_kernel(void)
     ins();
 #endif
 
+    // 创建idle任务并初始化调度器
+    idle_task_initialize();
+
+    // 创建两个内核线程
+    kernel_task_create();
+
     // timer初始化
     kprintf("timer_init\n");
     timer_init();
@@ -198,6 +247,5 @@ void init_kernel(void)
     kprintf("enable global irq\n");
     arch_local_irq_enable();
 
-    // 进入idle任务
     idle();
 }

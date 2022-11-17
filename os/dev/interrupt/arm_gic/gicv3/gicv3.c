@@ -3,12 +3,15 @@
 #include <k_stdint.h>
 #include <k_stddef.h>
 #include <k_stdbool.h>
+#include <k_assert.h>
 #include <uapi/types.h>
 #include <uapi/util.h>
 #include <barrier.h>
 #include <instructionset.h>
 #include <board.h>
 #include <irq.h>
+#include <task.h>
+#include <scheduler.h>
 
 #include <gic.h>
 
@@ -377,6 +380,12 @@ void gic_initialize(void)
 
 void decode_irq(u64 sp)
 {
+    kprintf("decode_irq\n");
+
+    struct tcb *task = this_task();
+    assert(task);
+    task->context.regs[SP] = sp;
+
     u32 irq;
     u64 icciar1;
 
@@ -397,6 +406,9 @@ void decode_irq(u64 sp)
 
     /* Write to the end-of-interrupt register */
     MSR(ICC_EOIR1_EL1, icciar1);
+
+    // 恢复当前任务的上下文
+    restore_current_context();
 }
 
 /****************************************************************************

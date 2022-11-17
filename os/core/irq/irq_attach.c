@@ -31,7 +31,7 @@ int irq_attach(uint32_t irq, xcpt_t isr, void *arg, unsigned long *notify)
     g_irqvector[ndx].arg = arg;
     g_irqvector[ndx].count = 0;
 
-    ret = ESUCCESS;
+    ret = OK;
 
     return ret;
 }

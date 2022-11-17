@@ -8,7 +8,6 @@
 typedef uint64_t  time64_t;       /* Holds time in microseconds */
 typedef uint32_t  time_t;         /* Holds time in seconds */
 typedef uint8_t   clockid_t;      /* Identifies one time base source */
-typedef void *timer_t;        /* Represents one POSIX timer */
 
 /* struct timespec is the standard representation of time as seconds and
  * nanoseconds.

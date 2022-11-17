@@ -43,12 +43,10 @@
 #define CPACR_EL1_FPEN          20     // FP regiters access
 
 /* Offsets within the user context, these need to match the order in context_t below */
-#define CTX_SIZE                (35*8)
+#define CTX_SIZE                (34*8)
 #define CTX_OFFS_LR             (30*8)
 #define CTX_OFFS_PC             (31*8)
 #define CTX_OFFS_SP             (32*8)
 #define CTX_OFFS_PSTATE         (33*8)
-#define CTX_OFFS_TPIDRURO       (34*8)
-
 
 #endif /* __ARMV8A_REGISTERSET_H */

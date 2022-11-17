@@ -94,7 +94,7 @@ cache_disable_done:
     msr     sctlr_el1, tmp
 
     // 设置MMU后设置C堆栈,注意此刻SP为虚拟地址
-    ldr     x0, = idlestack
+    ldr     x0, = idle_stack
     ldr     x1, = CONFIG_IDLE_TASK_STACKSIZE
     add     x0, x0, x1
     mov     sp, x0
@@ -106,6 +106,8 @@ cache_disable_done:
 mmu_enabled:
     b init_kernel
 
+.global idle_stack
+
 .section ".stack", "wa"
-idlestack:
+idle_stack:
     .space CONFIG_IDLE_TASK_STACKSIZE

@@ -3,8 +3,6 @@
 
 #include <chinos/config.h>
 
-#include <k_stdint.h>
-
 #undef NULL
 #if defined(__cplusplus)
 #define NULL 0
@@ -14,5 +12,11 @@
 
 typedef long unsigned int size_t;
 typedef long int ssize_t;
-typedef intptr_t ptrdiff_t;
+
+enum
+{
+    ERROR = -1,
+    OK = 0,
+};
+
 #endif
