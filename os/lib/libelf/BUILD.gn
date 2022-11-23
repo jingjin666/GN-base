@@ -1,0 +1,17 @@
+module_name = get_path_info(rebase_path("."), "name")
+
+source_set(module_name) {
+    sources = [
+        "elf_loader.c",
+        "elf32.c",
+        "elf64.c",
+        "arch/aarch64/arch_elf.c",
+    ]
+    configs = [
+        "//build/config:kernel",
+    ]
+}
+
+config("kernel") {
+    include_dirs = [ "./include" ]
+}

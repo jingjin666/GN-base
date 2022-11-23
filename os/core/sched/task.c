@@ -107,9 +107,9 @@ void task_switch(struct tcb *from, struct tcb *to)
     as_switch(to->addrspace);
 }
 
-void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size)
+void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as)
 {
-    task_init(task, TASK_TYPE_KERNEL);
+    task_init(task, type);
 
     task_setup_name(task, name);
     task_assign_tid(task);
@@ -128,5 +128,5 @@ void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t p
     context_set_stack(&task->context, stack, stack_size);
     context_stack_init(&task->context);
 
-    task->addrspace = &kernel_addrspace;
+    task->addrspace = as;
 }

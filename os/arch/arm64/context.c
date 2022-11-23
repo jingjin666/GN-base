@@ -2,6 +2,7 @@
 
 #include <k_stdint.h>
 #include <k_string.h>
+#include <k_assert.h>
 #include <task.h>
 #include <scheduler.h>
 #include <registerset.h>
@@ -51,50 +52,11 @@ void context_stack_init(struct context *ctx)
     k_memcpy(_ctx, ctx, sizeof(struct context));
 }
 
-//#define DEBUG_DUMP_CONTEXT
-#ifdef DEBUG_DUMP_CONTEXT
-static void context_dump(context_t *ctx)
-{
-    int i = 0;
-    while(i < REGS_COUNT)
-    {
-        kprintf("R[%d] = 0x%x\n", i, ctx->regs[i]);
-        i++;
-    }
-}
-#endif
-
 void restore_current_context(void)
 {
     struct tcb *task = this_task();
-    if (!task) {
-        return ;
-    }
+    assert(task);
 
-    unsigned long *regs = task->context.regs;
-
-#if 0
-    // dump stack
-    int j = 0;
-    unsigned long *stack = (unsigned long *)(0xffffff800041c400-128*8);
-    while(j < 128)
-    {
-        kprintf("X[%d, %p] = %p\n", j, stack, *stack);
-        stack++;
-        j++;
-    }
-#endif
-
-#if 0
-    context_t *ctx = (context_t *)(regs[SP] - CTX_SIZE);
-    kprintf("ctx = %p, regs[SP] = %p\n", ctx, regs[SP]);
-    int i = 0;
-    while(i < REGS_COUNT)
-    {
-        kprintf("X[%d, %p] = %p\n", i, &ctx->regs[i], ctx->regs[i]);
-        i++;
-    }
-#endif
     asm volatile
     (
         "mov     sp,  %0    \n"
@@ -127,7 +89,7 @@ void restore_current_context(void)
         "add     sp, sp, %4\n"
         "eret    \n"
         :
-        : "r"(regs[SP] - CTX_SIZE), "i"(CTX_OFFS_LR), "i"(CTX_OFFS_PC), "i"(CTX_OFFS_SP), "i"(CTX_SIZE)
+        : "r"(task->context.regs[SP] - CTX_SIZE), "i"(CTX_OFFS_LR), "i"(CTX_OFFS_PC), "i"(CTX_OFFS_SP), "i"(CTX_SIZE)
         : "memory"
     );
 }

@@ -21,5 +21,5 @@ extern struct addrspace kernel_addrspace;
 
 void as_switch(struct addrspace *as);
 void as_initialize(void);
-
+int as_map(struct addrspace *as, struct mem_region *region, uint32_t flag);
 #endif

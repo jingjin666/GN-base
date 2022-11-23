@@ -14,7 +14,7 @@
 
 #include <pagetable.h>
 
-//#define KERNEL_PAGETABLE_DEBUG
+#define KERNEL_PAGETABLE_DEBUG
 #ifdef KERNEL_PAGETABLE_DEBUG
 #define pagetable_dbg kdbg
 #define pagetable_err kerr

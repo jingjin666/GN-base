@@ -5,3 +5,15 @@ config("kernel") {
         "//os:kernel",
     ]
 }
+
+config("app") {
+    libs = []
+    libs += [ "//app/musl-1.2.3/out/lib/libc.a" ]
+    libs += [ "//app/musl-1.2.3/out/lib/libm.a" ]
+    libs += [ "//app/musl-1.2.3/out/lib/librt.a" ]
+    libs += [ "/home/luffy/workspace/toolchains/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf/bin/../lib/gcc/aarch64-none-elf/11.2.1/libgcc.a" ]
+    include_dirs = [ "//app/musl-1.2.3/out/include" ]
+    configs = [
+        "//app:service",
+    ]
+}

@@ -3,15 +3,15 @@ module_name = get_path_info(rebase_path("."), "name")
 group(module_name) {
     deps = []
     deps += [
-        "libc",
-        "libelf",
+        "test",
+        "crt",
     ]
 }
 
-config("kernel") {
+config("service") {
     configs = []
     configs += [
-        "libc:kernel",
-        "libelf:kernel",
+        "test:service",
+        "crt:service",
     ]
 }

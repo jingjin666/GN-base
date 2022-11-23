@@ -12,6 +12,7 @@ typedef struct image_region {
 } image_region_t;
 
 extern struct image_region kernel_image;
+extern struct mem_region user_elf_region;
 extern struct mm_gran *g_heap;
 extern struct graninfo g_heapinfo;
 extern struct mem_region kernel_heap_region;

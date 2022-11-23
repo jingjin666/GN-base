@@ -39,7 +39,7 @@ copy("copy_os") {
     outputs = [ "$target_elf" ]
 }
 
-action("build_image") {
+action("build_os") {
     deps = [
         ":copy_os",
     ]
@@ -49,6 +49,81 @@ action("build_image") {
         "$target_elf",
     ]
     
+    outputs = [
+        "$target_bin",
+        "$target_hex",
+        "$target_dump",
+    ]
+
+    args = [
+        "--format_tool",
+        "$crossdev",
+        "--elf",
+        rebase_path("$target_elf"),
+        "--bin",
+        rebase_path("$target_bin"),
+        "--hex",
+        rebase_path("$target_hex"),
+        "--dump",
+        rebase_path("$target_dump"),
+        "--dir",
+        rebase_path("$root_out_dir/image"),
+        "--flag",
+        "bd",
+    ]
+}
+
+group("app_modules") {
+    deps = [
+        "//app",
+    ]
+}
+
+config("app_config") {
+    defines = []
+    ld_script = rebase_path("//app/linker.lds")
+    ldflags = [
+        "-z",
+        "max-page-size=4096",
+        "-g",
+        "-T",
+        "$ld_script"
+    ]
+}
+
+executable("app") {
+    configs = []
+    configs += [ ":app_config" ]
+
+    sources = []
+
+    deps = [
+        ":app_modules",
+    ]
+}
+
+target = "$root_out_dir/app.elf"
+target_elf = "$root_out_dir/image/app.elf"
+target_bin = "$root_out_dir/image/app.bin"
+target_hex = "$root_out_dir/image/app.hex"
+target_dump = "$root_out_dir/image/app.dump"
+
+copy("copy_app") {
+    deps = [ ":app" ]
+    sources = [ "$target" ]
+    outputs = [ "$target_elf" ]
+}
+
+action("build_app") {
+    deps = [
+        ":copy_app",
+    ]
+
+    script = "//build/py_script/elf_format.py"
+    sources = [
+        "$target_elf",
+    ]
+
     outputs = [
         "$target_bin",
         "$target_hex",

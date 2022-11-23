@@ -77,11 +77,12 @@ SECTIONS
 
 SECTIONS
 {
-    . = ALIGN(8);
+    . = ALIGN(4096);
+    user_start = .;
     .user :
     {
-        user_start = .;
         *(.user*)
-        user_end = .;
     }
+    . = ALIGN(4096);
+    user_end = .;
 }

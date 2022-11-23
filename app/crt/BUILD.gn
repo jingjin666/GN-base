@@ -1,0 +1,15 @@
+module_name = get_path_info(rebase_path("."), "name")
+
+source_set(module_name) {
+    sources = [
+        "crt.c",
+    ]
+
+    configs = [
+        "//build/config:app",
+    ]
+}
+
+config("service") {
+    include_dirs =  [ "./include" ]
+}

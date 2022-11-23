@@ -1,6 +1,8 @@
 arch_cpuflags =  []
 arch_cpuflags =  [ "-mcpu=cortex-a53" ]
 
+#arch_cpuflags += [ "-march=armv8-a+fp+simd" ]
+
 arch_cflags = []
 arch_cflags = [ "-nostdlib",
                 "-nostdinc",
@@ -11,7 +13,7 @@ arch_cflags = [ "-nostdlib",
                 "-fno-strict-aliasing" ]
 
 debug_build_flags =  []
-debug_build_flags =  [ "-g" ]
+#debug_build_flags =  [ "-g" ]
 debug_build_flags += [ "-Wall",
                        "-Wstrict-prototypes",
                        "-Wshadow",

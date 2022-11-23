@@ -56,5 +56,5 @@ void task_release_tid(tid_t tid);
 int  task_assign_tid(tcb_t *task);
 void task_init(tcb_t *task, uint8_t type);
 void task_switch(tcb_t *from, tcb_t *to);
-void task_create(tcb_t *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size);
+void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as);
 #endif

@@ -13,6 +13,7 @@
 #include <pagetable.h>
 #include <gran.h>
 #include <init.h>
+#include <elf.h>
 
 #include "addrspace.h"
 
@@ -24,6 +25,7 @@ static unsigned long pg_alloc(size_t size)
 {
     void *v_page = gran_alloc(g_heap, size);
     unsigned long p_page = vbase_to_pbase((unsigned long)v_page);
+    kprintf("p_page = %p\n", p_page);
     return p_page;
 }
 
@@ -118,10 +120,41 @@ void as_initialize(void)
 {
     // 根据内核不同section属性来映射内核image
     kernel_as_image_mapping(&kernel_image);
+    // 映射用户ELF
+    kernel_as_ram_mapping(&user_elf_region);
     // 映射内核堆内存
     kernel_as_ram_mapping(&kernel_heap_region);
     // 映射内核设备内存
     kernel_as_dev_mapping((struct mem_region *)kernel_dev_ram);
     // 从恒等映射表切换到内核页表
     kernel_as_switch();
+}
+
+static unsigned long _pg_alloc(size_t size)
+{
+    void *v_page = gran_alloc(g_heap, size);
+    //unsigned long p_page = vbase_to_pbase((unsigned long)v_page);
+    //kprintf("p_page = %p\n", p_page);
+    //return p_page;
+    kprintf("v_page = %p\n", v_page);
+    return (unsigned long)v_page;
+}
+
+int as_map(struct addrspace *as, struct mem_region *region, uint32_t flag)
+{
+    unsigned long vaddr = region->vbase;
+    unsigned long paddr = region->pbase;
+    unsigned long size = region->size;
+    unsigned long attr;
+
+    if (flag == (PF_R|PF_X)) {
+        attr = pgprot_val(PAGE_KERNEL_ROX);
+    } else if (flag == (PF_R|PF_W)) {
+        attr = pgprot_val(PAGE_KERNEL);
+    } else {
+        // todo
+        PANIC();
+    }
+
+    return pg_map((pgd_t *)&as->pg_table, vaddr, paddr, size, attr, _pg_alloc);
 }
