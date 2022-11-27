@@ -2,6 +2,7 @@
 
 #include <k_stdint.h>
 #include <k_unistd.h>
+#if 0
 #include <uapi/syscall.h>
 
 int k_sleep(uint32_t seconds)
@@ -11,17 +12,17 @@ int k_sleep(uint32_t seconds)
 
 int k_usleep(uint32_t usec)
 {
-    return sys_call1(SVC_syscall_usleep, usec);
+    return sys_call1(SYS_nanosleep, usec * 1000);
 }
 
 int k_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
-    // todo
-    //return sys_call1(SVC_syscall_nanosleep, rqtp->tv_nsec);
-    return 0;
+    return sys_call1(SYS_nanosleep, rqtp->tv_nsec);
 }
 
-void k_yield(void)
+int k_yield(void)
 {
-    sys_call0(SVC_syscall_yield);
+    return sys_call0(SYS_yield);
 }
+
+#endif

@@ -25,6 +25,34 @@ typedef enum task_state
     NUM_TASK_STATES             /* Must be last */
 } task_state_e;
 
+typedef struct mm_area
+{
+    struct list_head link_head;         /* 线性区链表头 */
+    unsigned long mmap_base;		    /* 标识第一个分配的匿名线性区或文件内存映射的线性地址 */
+
+    /*
+     * start_brk-   堆的超始地址
+     * brk-         堆的当前最后地址
+     * start_stack- 用户态堆栈的起始地址
+     * end_stack-   用户态堆栈的结束地址
+     */
+    unsigned long start_brk, brk, start_stack, end_stack;
+
+    /*
+	 * start_code-  可执行代码的起始地址
+	 * end_code-    可执行代码的最后地址
+	 * start_data-  已初始化数据的起始地址
+	 * end_data--   已初始化数据的结束地址
+	 */
+    unsigned long start_code, end_code, start_data, end_data;
+
+    /*
+	 * start_bss-   未初始化/初始化0数据的起始地址
+	 * end_bss-     未初始化/初始化0数据的结束地址
+	 */
+    unsigned long start_bss, end_bss;
+} mm_area_t;
+
 typedef struct tcb
 {
     struct list_head link_head;
@@ -45,11 +73,32 @@ typedef struct tcb
 
     time64_t        readytime;
     uint32_t        timeslice;
+    uint8_t         type;
 
     context_t       context;
 
     addrspace_t    *addrspace;
+
+    mm_area_t       mm;
 } tcb_t;
+
+typedef struct vm_area
+{
+    struct list_head link_head;
+
+    mm_area_t *vm_mm;
+
+	unsigned long vm_start;		/* 起始虚拟地址 */
+	unsigned long vm_end;		/* 结束虚拟地址 */
+
+	unsigned long vm_pgoff;		/* 起始虚拟地址对应的文件偏移 */
+	int vm_file_fd;		        /* 虚拟地址对应的映射文件 */
+
+    unsigned long vm_prot;		/* 地址空间属性(R/W/E) */
+	unsigned long vm_flags;		/* 地址空间类型(REL/DYN/EXEC) */
+
+	char vm_name[64];
+} vm_area_t;
 
 void task_setup_name(tcb_t *task, const char *name);
 void task_release_tid(tid_t tid);

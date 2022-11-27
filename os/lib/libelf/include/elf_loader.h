@@ -7,18 +7,19 @@
 #include <k_stddef.h>
 #include <k_stdbool.h>
 #include <uapi/list.h>
+#include <task.h>
 
 struct segment
 {
 	struct list_head link_head;
-	size_t type;
-	size_t offset;
-	uintptr_t vaddr;
-	size_t filesz;
-	size_t memsz;
-	size_t flags;
-	size_t align;
-	bool remapped_writeable;
+	size_t      type;
+	size_t      offset;
+	uintptr_t   vaddr;
+	size_t      filesz;
+	size_t      memsz;
+	uint32_t    flags;
+	size_t      align;
+	bool        remapped_writeable;
 };
 
 struct chin_elf
@@ -44,10 +45,8 @@ struct chin_elf
 	void *phdr;
 
     struct list_head segs;
-
-    uintptr_t load_addr;
 };
 
-int elf_initialize(struct chin_elf *elf);
+int elf_initialize(struct tcb *task, struct chin_elf *elf);
 
 #endif

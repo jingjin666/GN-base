@@ -25,6 +25,8 @@ typedef unsigned int uint32_t;
     typedef unsigned long word_t;
 #endif
 
+typedef int64_t off_t;
+
 typedef int16_t pid_t;
 typedef int16_t tid_t;
 

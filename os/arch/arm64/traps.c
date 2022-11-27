@@ -1,25 +1,57 @@
 #include <k_stdio.h>
-
-#include <halt.h>
+#include <k_assert.h>
 #include <instructionset.h>
 #include <registerset.h>
-#include <uapi/types.h>
-#include <uapi/util.h>
+#include <scheduler.h>
+#include <uapi/vsyscall.h>
+#include <syscalls.h>
+
+typedef unsigned long (*sys_callback)(unsigned long *params);
+
+static sys_callback svc_handlers[] = {
+    [__NR_ioctl]        = vsys_ioctl,
+    [__NR_writev]       = vsys_writev,
+    [__NR_brk]          = vsys_brk,
+    [__NR_mmap]         = vsys_mmap,
+};
+
+static void svc_handler(void)
+{
+    struct tcb *current = this_task();
+    assert(current);
+
+    context_t *ctx = &current->context;
+    unsigned long sn = ctx->regs[X8];
+
+    kprintf("svc_handler: sn = %d\n", sn);
+
+    if (sn < ARRAY_SIZE(svc_handlers)) {
+        assert(svc_handlers[sn]);
+        unsigned long ret = svc_handlers[sn](ctx->regs);
+        context_set_retcode(ctx, ret);
+    } else {
+        kprintf("Unsupported svc sn = %d\n", sn);
+    }
+
+    schedule();
+
+    restore_current_context();
+}
 
 void cel_sync_traps(void)
 {
-    u64 esr;
+    unsigned long esr;
 
     kprintf("current el sync_traps\n");
     
     MRS("ESR_EL1", esr);
     kprintf("ESR_EL1 = %p\n", esr);
     
-    u32 ec = esr >> ESR_EC_SHIFT;
+    unsigned long ec = esr >> ESR_EC_SHIFT;
     kprintf("ec = %p\n", ec);
 
-    u64 far_el1;
-    u64 afsr0_el1;
+    unsigned long far_el1;
+    unsigned long afsr0_el1;
 
     switch (ec)
     {
@@ -39,7 +71,7 @@ void cel_sync_traps(void)
             kprintf("unknown sync traps\n");
     }
 
-    halt();
+    PANIC();
 }
 
 void cel_serr_traps(void)
@@ -49,18 +81,18 @@ void cel_serr_traps(void)
 
 void lel_sync_traps(void)
 {
-    u64 esr;
+    unsigned long esr;
 
     kprintf("lower el sync_traps\n");
     
     MRS("ESR_EL1", esr);
     kprintf("ESR_EL1 = %p\n", esr);
     
-    u32 ec = esr >> ESR_EC_SHIFT;
+    unsigned long ec = esr >> ESR_EC_SHIFT;
     kprintf("ec = %p\n", ec);
 
-    u64 far_el1;
-    u64 afsr0_el1;
+    unsigned long far_el1;
+    unsigned long afsr0_el1;
 
     switch (ec)
     {
@@ -69,6 +101,7 @@ void lel_sync_traps(void)
             MRS("FAR_EL1", far_el1);
             MRS("AFSR0_EL1", afsr0_el1);
             kprintf("DFAR = %p, ADFSR = %p\n", far_el1, afsr0_el1);
+            do_page_fault(far_el1);
             break;
         case ESR_EC_LEL_IABT:
             kprintf("Instruction Abort from a lower Exception level!\n");
@@ -77,7 +110,8 @@ void lel_sync_traps(void)
             kprintf("IFAR = %p, AIFSR = %p\n", far_el1, afsr0_el1);
             break;
         case ESR_EC_LEL_SVC64:
-            kprintf("SVC instruction execution in AArch64 state!");
+            kprintf("SVC instruction execution in AArch64 state!\n");
+            svc_handler();
             break;
         case ESR_EC_LEL_HVC64:
             kprintf("HVC instruction execution in AArch64 state, when HVC is not disabled!\n");
@@ -86,7 +120,7 @@ void lel_sync_traps(void)
             kprintf("unknown sync traps\n");
     }
 
-    halt();
+    PANIC();
 }
 
 void lel_serr_traps(void)

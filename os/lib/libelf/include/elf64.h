@@ -128,4 +128,6 @@ typedef Elf64_Sym   Elf_Sym;
 typedef Elf64_Shdr  Elf_Shdr;
 typedef Elf64_Word  Elf_Word;
 
+int elf64_header_check(Elf64_Ehdr *hdr);
+
 #endif

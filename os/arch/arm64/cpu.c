@@ -1,6 +1,5 @@
 #include <k_stdio.h>
 #include <uapi/util.h>
-#include <uapi/types.h>
 #include <instructionset.h>
 
 #include "cpu.h"
@@ -39,7 +38,7 @@ static void relocate_vector(void)
 
 void cpu_init(void)
 {
-    u64 spsel;
+    unsigned long spsel;
     MRS("SPSel", spsel);
     kprintf("SPSel = %p\n", spsel);
 

@@ -5,10 +5,10 @@
 
 void idle(void)
 {
-    int i = 0;
+    //int i = 0;
     while(1)
     {
-        kprintf("idle %d\n", i++);
+        //kprintf("idle %d\n", i++);
         wfi();
     }
 }

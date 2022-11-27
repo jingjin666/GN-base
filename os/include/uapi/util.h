@@ -49,10 +49,9 @@
 #define bitmask(x) (UL(1) << (x))
 #define lowbitsmask(x) (bitmask(x) - UL(1))
 
-#define align_to(size, align) ((((size) + (align) - 1) / (align))*(align))
+#define ALIGN(size, align) ((((size) + (align) - 1) / (align))*(align))
 
-#define container_of(ptr, type, member) \
-  ((type *)((uintptr_t)(ptr) - offsetof(type, member)))
+#define PAGE_ALIGN(size) ALIGN(size, CONFIG_PAGE_SIZE)
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 

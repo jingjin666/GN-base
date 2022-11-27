@@ -398,7 +398,7 @@ void gran_free(struct mm_gran *gran, void *memory, size_t size)
     uint32_t     gatmask;
     int          ret;
 
-    assert(gran != NULL && memory && size <= 32 * (1 << gran->log2gran));  
+    assert(gran != NULL && memory && size <= 32 * (1 << gran->log2gran));
 
     /* Determine the granule number of the first granule in the allocation */
     granno = ((uintptr_t)memory - gran->heapstart) >> gran->log2gran;

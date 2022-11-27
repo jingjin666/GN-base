@@ -5,6 +5,7 @@ group(module_name) {
     deps += [
         "libc",
         "libelf",
+        "libsyscalls",
     ]
 }
 
@@ -13,5 +14,6 @@ config("kernel") {
     configs += [
         "libc:kernel",
         "libelf:kernel",
+        "libsyscalls:kernel",
     ]
 }

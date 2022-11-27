@@ -1,8 +1,6 @@
 #ifndef __GIC_H
 #define __GIC_H
 
-#include <uapi/types.h>
-
 #define GIC_IRQ_SGI                     0
 
 #define GIC_IRQ_PPI                     16
@@ -99,9 +97,9 @@ static inline void arch_local_irq_disable(void)
     );
 }
 
-void decode_irq(u64 sp);
+void decode_irq(void);
 void gic_initialize(void);
-void up_enable_irq(u32 irq);
-void up_disable_irq(u32 irq);
-void up_ack_irq(u32 irq);
+void up_enable_irq(uint32_t irq);
+void up_disable_irq(uint32_t irq);
+void up_ack_irq(uint32_t irq);
 #endif

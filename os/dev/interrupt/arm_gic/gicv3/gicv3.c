@@ -4,7 +4,6 @@
 #include <k_stddef.h>
 #include <k_stdbool.h>
 #include <k_assert.h>
-#include <uapi/types.h>
 #include <uapi/util.h>
 #include <barrier.h>
 #include <instructionset.h>
@@ -17,14 +16,14 @@
 
 struct gicv3_config_desc
 {
-    u64 mmio_base;
-    u64 gicd_offset;
-    u64 gicr_offset;
-    u64 gicr_stride;
-    u64 reserved0;
-    u64 ipi_base;
-    u64 optional;
-    u64 reserved1[3];
+    uint64_t mmio_base;
+    uint64_t gicd_offset;
+    uint64_t gicr_offset;
+    uint64_t gicr_stride;
+    uint64_t reserved0;
+    uint64_t ipi_base;
+    uint64_t optional;
+    uint64_t reserved1[3];
 };
 
 struct gicv3_config_desc defualt_gicv3_config_desc = 
@@ -152,12 +151,12 @@ struct gicv3_config_desc defualt_gicv3_config_desc =
 
 #define INTID_MASK  lowbitsmask(24)
 
-static u32 gic_max_int;
+static uint32_t gic_max_int;
 
 static void gicr_wait_rwp(void)
 {
-    u32 cnt = 10000;
-    u32 cpu = 0;
+    uint32_t cnt = 10000;
+    uint32_t cpu = 0;
     while (bitfield_get(getreg32(GICR_CTLR(cpu)), 31, 1)) {
         cnt--;
         if (!cnt) {
@@ -169,7 +168,7 @@ static void gicr_wait_rwp(void)
 
 static void gicd_wait_rwp(void)
 {
-    u32 cnt = 10000;
+    uint32_t cnt = 10000;
     while (bitfield_get(getreg32(GICD_CTLR), 31, 1)) {
         cnt--;
         if (!cnt) {
@@ -179,18 +178,18 @@ static void gicd_wait_rwp(void)
     }
 }
 
-static inline u64 get_current_mpidr(void)
+static inline uint64_t get_current_mpidr(void)
 {
-    u64 mpidr;
+    uint64_t mpidr;
     MRS("mpidr_el1", mpidr);
     kprintf("mpidr_el1 %p\n", mpidr);
     return mpidr;
 }
 
-static inline u64 mpidr_to_gic_affinity(void)
+static inline uint64_t mpidr_to_gic_affinity(void)
 {
-    u64 mpidr = get_current_mpidr();
-    u64 affinity = 0;
+    uint64_t mpidr = get_current_mpidr();
+    uint64_t affinity = 0;
     affinity = (uint64_t)MPIDR_AFF3(mpidr) << 32 | MPIDR_AFF2(mpidr) << 16 |
                MPIDR_AFF1(mpidr) << 8  | MPIDR_AFF0(mpidr);
     return affinity;
@@ -198,18 +197,18 @@ static inline u64 mpidr_to_gic_affinity(void)
 
 static void redistributor_init(void)
 {
-    u32 i;
-    u32 cpu = 0;
+    uint32_t i;
+    uint32_t cpu = 0;
 
     // mark PE online
-    u32 waker = getreg32(GICR_WAKER(cpu));
+    uint32_t waker = getreg32(GICR_WAKER(cpu));
     kprintf("waker = %p\n", waker);
     waker &= ~GICR_WAKER_ProcessorSleep;
     kprintf("waker = %p\n", waker);
     putreg32(waker, GICR_WAKER(cpu));
     while (getreg32(GICR_WAKER(cpu)) & GICR_WAKER_ChildrenAsleep) {
         kprintf("GICv3: GICR_WAKER returned non-zero %x\n", waker);
-        halt();
+        PANIC();
     }
 
     /* deactivate SGIs/PPIs */
@@ -217,19 +216,19 @@ static void redistributor_init(void)
     gicr_wait_rwp();
 
     /* set ICFGR0 for SGIs as edge-triggered */
-    u32 icfgr0 = getreg32(GICR_ICFGR0(cpu));
+    uint32_t icfgr0 = getreg32(GICR_ICFGR0(cpu));
     kprintf("icfgr0 = %p\n", icfgr0);
     putreg32(0xaaaaaaaa, GICR_ICFGR0(cpu));
     gicr_wait_rwp();
 
     /* set ICFGR1 for PPIs as level-triggered */
-    u32 icfgr1 = getreg32(GICR_ICFGR1(cpu));
+    uint32_t icfgr1 = getreg32(GICR_ICFGR1(cpu));
     kprintf("icfgr1 = %p\n", icfgr1);
     putreg32(0, GICR_ICFGR1(cpu));
     gicr_wait_rwp();
 
     /* set priority on PPI and SGI interrupts */
-    u32 priority = (GIC_PRI_IRQ << 24 | GIC_PRI_IRQ << 16 | GIC_PRI_IRQ << 8 |
+    uint32_t priority = (GIC_PRI_IRQ << 24 | GIC_PRI_IRQ << 16 | GIC_PRI_IRQ << 8 |
                 GIC_PRI_IRQ);
     for (i = 0; i < 32; i += 4) {
         putreg32(priority, GICR_IPRIORITYR0(cpu) + i);
@@ -250,7 +249,7 @@ static void redistributor_init(void)
 
 static void cpu_interface_init(void)
 {
-    u32 sre;
+    uint32_t sre;
     // enable system register access
     MRS(ICC_SRE_EL1, sre);
     kprintf("sre = %p\n", sre);
@@ -265,7 +264,7 @@ static void cpu_interface_init(void)
     MSR(ICC_PMR_EL1, DEFAULT_PMR_VALUE);
 
     // EOI drops priority and deactivates the interrupt: ICC_CTLR_EL1
-    u32 icc_ctlr;
+    uint32_t icc_ctlr;
     MRS(ICC_CTLR_EL1, icc_ctlr);
     kprintf("icc_ctlr = %p\n", icc_ctlr);
     icc_ctlr &= ~GICC_CTLR_EL1_EOImode_drop;
@@ -282,15 +281,15 @@ static void cpu_interface_init(void)
 
 static void distributor_init(void)
 {
-    u32 i;
+    uint32_t i;
 
     // read gic version
-    u32 pidr2 = getreg32(GICD_PIDR2);
-    u32 gic_version = bitfield_get(pidr2, 4, 4);
+    uint32_t pidr2 = getreg32(GICD_PIDR2);
+    uint32_t gic_version = bitfield_get(pidr2, 4, 4);
     assert((gic_version == ARCH_REV_GICV3) || (gic_version == ARCH_REV_GICV4));
 
     // read gic max interrupts
-    u32 typer = getreg32(GICD_TYPER);
+    uint32_t typer = getreg32(GICD_TYPER);
     gic_max_int = (bitfield_get(typer, 0, 5) + 1) * 32;
     kprintf("gic_version = %d, gic_max_int = %d, typer = %p\n", gic_version, gic_max_int, typer);
 
@@ -304,7 +303,7 @@ static void distributor_init(void)
     }
 
     // default priority for global interrupts
-    u32 priority = (GIC_PRI_IRQ << 24 | GIC_PRI_IRQ << 16 | GIC_PRI_IRQ << 8 |
+    uint32_t priority = (GIC_PRI_IRQ << 24 | GIC_PRI_IRQ << 16 | GIC_PRI_IRQ << 8 |
                 GIC_PRI_IRQ);
     for (i = 32; i < gic_max_int; i += 4) {
         putreg32(priority, GICD_IPRIORITYR(i / 4));
@@ -324,7 +323,7 @@ static void distributor_init(void)
     gicd_wait_rwp();
 
     // route all global IRQs to this CPU
-    u64 affinity = mpidr_to_gic_affinity();
+    uint64_t affinity = mpidr_to_gic_affinity();
     kprintf("affinity = %p\n", affinity);
     for (i = 32; i < gic_max_int; i++) {
         putreg64(GICD_IROUTER(i), affinity);
@@ -378,16 +377,12 @@ void gic_initialize(void)
  *
  ****************************************************************************/
 
-void decode_irq(u64 sp)
+void decode_irq(void)
 {
     kprintf("decode_irq\n");
 
-    struct tcb *task = this_task();
-    assert(task);
-    task->context.regs[SP] = sp;
-
-    u32 irq;
-    u64 icciar1;
+    uint32_t irq;
+    uint64_t icciar1;
 
     MRS(ICC_IAR1_EL1, icciar1);
     //kprintf("ICC_IAR1_EL1 = %p\n", icciar1);
@@ -408,6 +403,7 @@ void decode_irq(u64 sp)
     MSR(ICC_EOIR1_EL1, icciar1);
 
     // 恢复当前任务的上下文
+    kprintf("restore_current_context\n");
     restore_current_context();
 }
 
@@ -429,9 +425,9 @@ void decode_irq(u64 sp)
  *   avoided in common implementations where possible.
  *
  ****************************************************************************/
-void up_enable_irq(u32 irq)
+void up_enable_irq(uint32_t irq)
 {
-    u32 mask;
+    uint32_t mask;
 
     mask = 1 << (irq % 32);
     if (irq >= IRQN_SGI0 && irq < IRQN_SPIs) {
@@ -458,10 +454,10 @@ void up_enable_irq(u32 irq)
  *   avoided in common implementations where possible.
  *
  ****************************************************************************/
-void up_disable_irq(u32 irq)
+void up_disable_irq(uint32_t irq)
 {
-    u32 mask;
-    u32 cpu = 0;
+    uint32_t mask;
+    uint32_t cpu = 0;
 
     mask = 1 << (irq % 32);
     if (irq >= IRQN_SGI0 && irq < IRQN_SPIs) {
@@ -475,7 +471,7 @@ void up_disable_irq(u32 irq)
     }
 }
 
-void up_ack_irq(u32 irq)
+void up_ack_irq(uint32_t irq)
 {
 }
 

@@ -165,10 +165,6 @@
 #define PT_GNU_STACK	   0x6474e551
 #define PT_GNU_RELRO	   0x6474e552
 #define PT_GNU_PROPERTY	   0x6474e553
-#define PT_LOSUNW	       0x6ffffffa
-#define PT_SUNWBSS	       0x6ffffffa
-#define PT_SUNWSTACK	   0x6ffffffb
-#define PT_HISUNW	       0x6fffffff
 #define PT_HIOS		       0x6fffffff
 #define PT_LOPROC	       0x70000000
 #define PT_HIPROC	       0x7fffffff
@@ -209,5 +205,7 @@
 #define DT_BINDNOW         24         /* d_un=ignored */
 #define DT_LOPROC          0x70000000 /* d_un=unspecified */
 #define DT_HIPROC          0x7fffffff /* d_un= unspecified */
+
+int elf_arch_check(Elf64_Ehdr *hdr);
 
 #endif

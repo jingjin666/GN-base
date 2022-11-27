@@ -3,10 +3,12 @@
 #include <k_stdio.h>
 #include <k_stdint.h>
 #include <k_stddef.h>
+#include <k_string.h>
 #include <k_assert.h>
 #include <k_debug.h>
 #include <uapi/errors.h>
 #include <elf.h>
+#include <mmap.h>
 
 #include "elf_loader.h"
 
@@ -25,11 +27,17 @@
 
 #include <init.h>
 #include <gran.h>
-static void *calloc(size_t n, size_t size)
+static void *elf_calloc(size_t size)
 {
-    void *mem = gran_alloc(g_heap, size);
-    k_memset(mem, 0, size);
-    return mem;
+    void *p = gran_alloc(g_heap, size);
+    k_memset(p, 0, size);
+    elf_dbg("elf_calloc p = %p\n", p);
+    return p;
+}
+
+static void elf_free(void *p, size_t size)
+{
+    gran_free(g_heap, p, size);
 }
 
 static void dump_elf_header(Elf_Ehdr *hdr)
@@ -63,10 +71,22 @@ static void segment_stack_push(struct segment *seg, struct chin_elf *elf)
 	list_add(&seg->link_head, &elf->segs);
 }
 
+static void remove_segments(struct chin_elf *elf)
+{
+	struct segment *seg = NULL;
+	struct segment *tmp_seg = NULL;
+	list_for_each_entry_safe(seg, tmp_seg, &elf->segs, link_head)
+	{
+		list_del(&seg->link_head);
+		elf_dbg("free seg %p %p\n", seg, seg->memsz);
+		elf_free(seg, sizeof(struct segment));
+	}
+}
+
 static void add_segment(struct chin_elf *elf, size_t type, size_t offset, uintptr_t vaddr,
 			size_t filesz, size_t memsz, size_t flags, size_t align)
 {
-	struct segment *seg = (struct segment *)calloc(1, sizeof(struct segment));
+	struct segment *seg = (struct segment *)elf_calloc(sizeof(struct segment));
 	if (!seg) {
 		elf_err("calloc\n");
 		return;
@@ -134,12 +154,9 @@ static void load_segments(struct chin_elf *elf)
                 case PT_GNU_STACK:
                 case PT_GNU_RELRO:
                 case PT_GNU_PROPERTY:
-                //case PT_LOSUNW:
-                case PT_SUNWBSS: 
-                case PT_SUNWSTACK:
-                //case PT_HISUNW:
                 case PT_HIOS:
                 case PT_LOPROC:
+                case PT_HIPROC:
                     // todo
                     break;
                 default:
@@ -165,7 +182,7 @@ static int copy_segment(struct chin_elf *elf, struct segment *seg)
     }
 
 	/* 拷贝code/data */
-	char *buff = elf->buffer + offset;
+	uint8_t *buff = elf->buffer + offset;
     if (seg->flags == (PF_R|PF_X)) {
         elf_dbg("copy code = %p, size = %p\n", addr, size);
     } else if(seg->flags == (PF_R|PF_W)) {
@@ -174,7 +191,7 @@ static int copy_segment(struct chin_elf *elf, struct segment *seg)
         elf_err("Unknown segment flags\n");
         return -EINVAL;
     }
-	k_memcpy((char *)addr, buff, size);
+	k_memcpy((void *)addr, (void *)buff, size);
 
 	/* 有BSS段需要清空 */
 	if (mem_size > size) {
@@ -187,25 +204,36 @@ static int copy_segment(struct chin_elf *elf, struct segment *seg)
 	return retval;
 }
 
-static void elf_map(uintptr_t vaddr, size_t size, uint32_t flags, uintptr_t *addr)
+static void elf_map(struct tcb *task, uintptr_t vaddr, size_t size, uint32_t flags, uintptr_t *addr)
 {
-    extern struct addrspace user_addrspace;
     struct mem_region elf_region;
 
-    *addr = (unsigned long)calloc(1, size);
-
+    *addr = (unsigned long)elf_calloc(size);
     elf_region.pbase = vbase_to_pbase(*addr);
     elf_region.vbase = vaddr;
     elf_region.size  = size;
 
-    elf_dbg("as_map %p %p %p\n", elf_region.pbase, elf_region.vbase, elf_region.size);
-    as_map(&user_addrspace.pg_table, &elf_region, flags);
+    uint32_t prot = 0;
+    if (flags & PF_R) {
+        prot |= PROT_READ;
+    }
+
+    if (flags & PF_W) {
+        prot |= PROT_WRITE;
+    }
+
+    if (flags & PF_X) {
+        prot |= PROT_EXEC;
+    }
+
+    as_map(task->addrspace, &elf_region, prot, RAM_NORMAL);
+
+    //dump_pgtable_verbose(&task->addrspace->pg_table, 0);
 }
 
-static void populate_segments(struct chin_elf *elf)
+static void populate_segments(struct tcb *task, struct chin_elf *elf)
 {
     struct segment *seg;
-    uintptr_t addr;
 
     /* 主模块段映射，把相关段拷贝到运行地址空间 */
     list_for_each_entry(seg, &elf->segs, link_head)
@@ -213,34 +241,45 @@ static void populate_segments(struct chin_elf *elf)
         if (seg->type == PT_LOAD)
         {
             if (seg->flags == (PF_R|PF_X)) {
-                // 映射RE段
-                elf_dbg("elf_mmap, vm = %p, size = %p\n", seg->vaddr, seg->memsz);
-
-                uintptr_t align_addr = seg->vaddr / seg->align * seg->align;
-				size_t align_size = (seg->vaddr % seg->align) + seg->memsz;
-
-                elf->load_addr = seg->vaddr;
-
-                elf_map(align_addr, align_to(align_size, seg->align), seg->flags, &seg->vaddr);
-                copy_segment(elf, seg);
+                // RE段
+                task->mm.start_code     = seg->vaddr;
+                task->mm.end_code       = seg->vaddr + seg->memsz;
+                task->mm.start_stack    = (unsigned long)task->stack;
+                task->mm.end_stack      = (unsigned long)task->stack + task->stack_size;
+                // map base growup under the stack
+                task->mm.mmap_base      = task->mm.start_stack;
             } else if (seg->flags == (PF_R|PF_W)) {
-                // 映射RW段
-                elf_dbg("elf_mmap, vm = %p, size = %p\n", seg->vaddr, seg->memsz);
-
-                uintptr_t align_addr = seg->vaddr / seg->align * seg->align;
-				size_t align_size = (seg->vaddr % seg->align) + seg->memsz;
-
-                elf_map(align_addr, align_to(align_size, seg->align), seg->flags, &seg->vaddr);
-                copy_segment(elf, seg);
+                // RW段
+                task->mm.start_data = seg->vaddr;
+                task->mm.end_data   = seg->vaddr + seg->filesz;
+                task->mm.start_bss  = task->mm.end_data;
+                task->mm.end_bss    = seg->vaddr + seg->memsz;
+                task->mm.start_brk  = PAGE_ALIGN(task->mm.end_bss);
+                task->mm.brk        = task->mm.start_brk;
             } else {
                 // todo
                 PANIC();
             }
+
+            elf_dbg("elf_mmap, vm = %p, size = %p\n", seg->vaddr, seg->memsz);
+
+            uintptr_t align_addr = seg->vaddr / seg->align * seg->align;
+            size_t align_size = (seg->vaddr % seg->align) + seg->memsz;
+            elf_map(task, align_addr, ALIGN(align_size, seg->align), seg->flags, &seg->vaddr);
+
+            copy_segment(elf, seg);
         }
     }
+    elf_dbg("\n end_stack: %p, start_stack: %p\n mmap_base: %p\n",
+            task->mm.end_stack, task->mm.start_stack, task->mm.mmap_base);
+    elf_dbg("\n start_code: %p, end_code: %p\n start_data: %p, end_data: %p\n start_bss : %p, end_bss : %p\n start_brk : %p, brk : %p\n",
+                task->mm.start_code, task->mm.end_code, \
+                task->mm.start_data, task->mm.end_data, \
+                task->mm.start_bss,  task->mm.end_bss,  \
+                task->mm.start_brk,  task->mm.brk);
 }
 
-int elf_initialize(struct chin_elf *elf)
+int elf_initialize(struct tcb *task, struct chin_elf *elf)
 {
     int ret = OK;
     Elf_Ehdr elf_header;
@@ -284,11 +323,13 @@ int elf_initialize(struct chin_elf *elf)
     elf->e_phentsize = elf_header.e_phentsize;
     elf->e_shentsize = elf_header.e_shentsize;
 
-    elf_dbg("elf->entry = 0x%016x\n", elf->e_entry);
+    elf_dbg("elf->entry = %p\n", elf->e_entry);
 
     load_segments(elf);
 
-    populate_segments(elf);
+    populate_segments(task, elf);
+
+    remove_segments(elf);
 
     return ret;
 }

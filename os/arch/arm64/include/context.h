@@ -50,7 +50,8 @@ void context_init(struct context *ctx, uint8_t type);
 void context_set_entry(struct context *ctx, unsigned long entry);
 void context_set_exit(struct context *ctx, unsigned long exit);
 void context_set_retcode(struct context *ctx, unsigned long retcode);
-void context_set_reg_param(struct context *ctx, unsigned long p1, unsigned long p2, unsigned long p3);
+void context_set_params(struct context *ctx, unsigned long p0, unsigned long p1, unsigned long p2, unsigned long p3,
+                                                   unsigned long p4, unsigned long p5, unsigned long p6, unsigned long p7);
 void context_set_stack(struct context *ctx, void *stack, uint32_t size);
 void restore_current_context(void);
 #endif

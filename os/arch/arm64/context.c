@@ -34,11 +34,17 @@ void context_set_retcode(struct context *ctx, unsigned long retcode)
     ctx->regs[X0] = retcode;
 }
 
-void context_set_reg_param(struct context *ctx, unsigned long p1, unsigned long p2, unsigned long p3)
+void context_set_params(struct context *ctx, unsigned long p0, unsigned long p1, unsigned long p2, unsigned long p3,
+                                                   unsigned long p4, unsigned long p5, unsigned long p6, unsigned long p7)
 {
+    ctx->regs[X0] = p0;
     ctx->regs[X1] = p1;
     ctx->regs[X2] = p2;
     ctx->regs[X3] = p3;
+    ctx->regs[X4] = p4;
+    ctx->regs[X5] = p5;
+    ctx->regs[X6] = p6;
+    ctx->regs[X7] = p7;
 }
 
 void context_set_stack(struct context *ctx, void *stack, uint32_t size)
@@ -46,28 +52,34 @@ void context_set_stack(struct context *ctx, void *stack, uint32_t size)
     ctx->regs[SP] = (unsigned long)stack + size;
 }
 
-void context_stack_init(struct context *ctx)
-{
-    struct context *_ctx = (struct context *)(ctx->regs[SP] - CTX_SIZE);
-    k_memcpy(_ctx, ctx, sizeof(struct context));
-}
-
 void restore_current_context(void)
 {
-    struct tcb *task = this_task();
-    assert(task);
+    struct tcb *current = this_task();
+    assert(current);
+
+#if 0
+    context_t *ctx = &task->context;
+    kprintf("ctx = %p\n", ctx);
+    int i = 0;
+    while(i < REGS_COUNT)
+    {
+        kprintf("X[%d, %p] = %p\n", i, &ctx->regs[i], ctx->regs[i]);
+        i++;
+    }
+#endif
 
     asm volatile
     (
+        // set sp_el1
         "mov     sp,  %0    \n"
 
         // restore PC -> ELR_EL1
-        "ldr     x9, [sp, %2]   \n"
+        "ldr     x9, [sp, %1]   \n"
         "msr     elr_el1, x9    \n"
 
         // restore SP -> SP_EL0, PSTATE -> SPSR_EL1
-        "ldp     x10, x11, [sp, %3]     \n"
-        //"msr     sp_el0,   x10          \n"
+        "ldp     x10, x11, [sp, %2]     \n"
+        "msr     sp_el0,   x10          \n"
         "msr     spsr_el1, x11          \n"
 
         "ldp     x0,  x1,  [sp, #16 * 0]         \n"
@@ -85,11 +97,12 @@ void restore_current_context(void)
         "ldp     x24, x25, [sp, #16 * 12]        \n"
         "ldp     x26, x27, [sp, #16 * 13]        \n"
         "ldp     x28, x29, [sp, #16 * 14]        \n"
-        "ldr     x30, [sp, %1]  \n"
-        "add     sp, sp, %4\n"
+        // restore lr(x30)
+        "ldr     lr, [sp, #16 * 15]  \n"
+        // return from exception
         "eret    \n"
         :
-        : "r"(task->context.regs[SP] - CTX_SIZE), "i"(CTX_OFFS_LR), "i"(CTX_OFFS_PC), "i"(CTX_OFFS_SP), "i"(CTX_SIZE)
+        : "r"(current->context.regs), "i"(CTX_OFFS_PC), "i"(CTX_OFFS_SP)
         : "memory"
     );
 }

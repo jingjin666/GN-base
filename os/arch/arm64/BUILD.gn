@@ -13,6 +13,7 @@ source_set(module_name) {
         "cache.c",
         "traps.c",
         "context.c",
+        "fault.c",
     ]
 
     configs = [

@@ -128,4 +128,6 @@ typedef Elf32_Sym   Elf_Sym;
 typedef Elf32_Shdr  Elf_Shdr;
 typedef Elf32_Word  Elf_Word;
 
+int elf32_header_check(Elf32_Ehdr *hdr);
+
 #endif

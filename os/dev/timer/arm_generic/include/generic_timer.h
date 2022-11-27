@@ -34,7 +34,7 @@ struct generic_timer_config_desc
     uint16_t irq_sphys;
 };
 
-static inline void generic_timer_reset(u64 us)
+static inline void generic_timer_reset(uint64_t us)
 {
     MSR(CNT_TVAL, us * TICKS_PER_US);
     MSR(CNT_CTL, 1);

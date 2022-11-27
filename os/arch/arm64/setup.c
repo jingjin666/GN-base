@@ -17,7 +17,7 @@
 
 // 存放恒等映射和初始化映射的页表,这一阶段都使用段式映射,页表空间使用较小,这里初始化4M空间来进行存储管理
 #define EARLY_PGTABLE_NR_PAGES  1024
-#define EARLY_PGTABLE_MEM_SIZE  (PAGE_SIZE * EARLY_PGTABLE_NR_PAGES)
+#define EARLY_PGTABLE_MM_SIZE  (PAGE_SIZE * EARLY_PGTABLE_NR_PAGES)
 
 /* Kernel内存空间映射 */
 const struct mem_region kernel_normal_ram[] = {
@@ -41,23 +41,23 @@ const struct mem_region kernel_dev_ram[] = {
 };
 
 // 恒等映射的PGD页表
-static BOOTDATA struct page_table identifymap_pg_dir;
+static BOOTDATA struct page_table identifymap_pt;
 // 页表空间
-static BOOTDATA char early_pgtable_space[EARLY_PGTABLE_MEM_SIZE];
+static BOOTDATA char idmap_pt_space[EARLY_PGTABLE_MM_SIZE];
 // 页表内存管理的数据结构
-static BOOTDATA char early_pgtable_mem[EARLY_PGTABLE_NR_PAGES];
+static BOOTDATA char idmap_pt_mm[EARLY_PGTABLE_NR_PAGES];
 
-static void BOOTPHYSIC early_pgtable_mem_init(void)
+static void BOOTPHYSIC idmap_pt_init(void)
 {
-    k_memset(early_pgtable_space, 0, sizeof(early_pgtable_space));
-    k_memset(early_pgtable_mem, 0, sizeof(early_pgtable_mem));
+    k_memset(idmap_pt_space, 0, sizeof(idmap_pt_space));
+    k_memset(idmap_pt_mm, 0, sizeof(idmap_pt_mm));
 }
 
-static u64 BOOTPHYSIC early_pgtable_mem_free(void)
+static u64 BOOTPHYSIC idmap_pt_info(void)
 {
    u64 free = 0;
    for (int i = 0; i < EARLY_PGTABLE_NR_PAGES; i++) {
-        if (early_pgtable_mem[i] == 0) {
+        if (idmap_pt_mm[i] == 0) {
             free++;
         }
    }
@@ -67,9 +67,9 @@ static u64 BOOTPHYSIC early_pgtable_mem_free(void)
 u64 BOOTPHYSIC early_pgtable_alloc(u64 size)
 {
     for (int i = 0; i < EARLY_PGTABLE_NR_PAGES; i++) {
-        if (early_pgtable_mem[i] == 0) {
-            early_pgtable_mem[i] = 1;
-            return (u64)&early_pgtable_space[i * PAGE_SIZE];
+        if (idmap_pt_mm[i] == 0) {
+            idmap_pt_mm[i] = 1;
+            return (u64)&idmap_pt_space[i * PAGE_SIZE];
         }
     }
     return 0;
@@ -87,12 +87,12 @@ static void BOOTPHYSIC boot_identify_mapping(void)
     size = kernel_normal_ram[0].size;//(u64)&boot_end - (u64)&boot_physic_start;
     attr = pgprot_val(PAGE_KERNEL_EXEC);
     kprintf("%s:%d#pg_map: va:%p, pa:%p, siza:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
-    pg_map((pgd_t *)&identifymap_pg_dir, vaddr, paddr, size, attr, early_pgtable_alloc);
+    idmap_pt_map((pgd_t *)&identifymap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
 
-    //dump_pgtable_verbose((pgd_t *)&identifymap_pg_dir);
+    //dump_pgtable_verbose((pgd_t *)&identifymap_pt, 1);
 }
 
-static void BOOTPHYSIC boot_initpgtable_mapping(void)
+static void BOOTPHYSIC boot_kernel_mapping(void)
 {
     //extern unsigned long kernel_start;
     //extern unsigned long kernel_end;
@@ -104,9 +104,9 @@ static void BOOTPHYSIC boot_initpgtable_mapping(void)
     size = kernel_normal_ram[0].size;//(u64)&kernel_end - (u64)&kernel_start;
     attr = pgprot_val(PAGE_KERNEL_EXEC);
     kprintf("%s:%d#pg_map: va:%p, pa:%p, size:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
-    pg_map((pgd_t *)&identifymap_pg_dir, vaddr, paddr, size, attr, early_pgtable_alloc);
+    idmap_pt_map((pgd_t *)&identifymap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
 
-    //dump_pgtable_verbose((pgd_t *)&identifymap_pg_dir);
+    //dump_pgtable_verbose((pgd_t *)&identifymap_pt, 1);
 
     // 映射内核设备内存
     vaddr = kernel_dev_ram[0].vbase;
@@ -114,20 +114,20 @@ static void BOOTPHYSIC boot_initpgtable_mapping(void)
     size = kernel_dev_ram[0].size;
     attr = PROT_SECT_DEVICE_nGnRE;
     kprintf("%s:%d#pg_map: va:%p, pa:%p, size:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
-    pg_map((pgd_t *)&identifymap_pg_dir, vaddr, paddr, size, attr, early_pgtable_alloc);
+    idmap_pt_map((pgd_t *)&identifymap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
 
-    //dump_pgtable_verbose((pgd_t *)&identifymap_pg_dir);
+    //dump_pgtable_verbose((pgd_t *)&identifymap_pt, 1);
 
     /* 注意此处需要使能TTBR0，打开MMU后，在进入虚拟地址空间前，任然还有一些代码运行于物理内存中 */
     /* TTBR0 */
     u64 ttbr0;
-    MSR("TTBR0_EL1", (u64)&identifymap_pg_dir);
+    MSR("TTBR0_EL1", (u64)&identifymap_pt);
     MRS("TTBR0_EL1", ttbr0);
     kprintf("TTBR0_EL1 = 0x%lx\n", ttbr0);
 
     /* TTBR1 */
     u64 ttbr1;
-    MSR("TTBR1_EL1", (u64)&identifymap_pg_dir);
+    MSR("TTBR1_EL1", (u64)&identifymap_pt);
     MRS("TTBR1_EL1", ttbr1);
     kprintf("TTBR1_EL1 = 0x%lx\n", ttbr1);
 }
@@ -172,11 +172,11 @@ void BOOTPHYSIC boot_setup_mmu(void)
     MRS("TCR_EL1", tcr);
     kprintf("TCR_EL1 = 0x%lx\n", tcr);
 
-    early_pgtable_mem_init();
+    idmap_pt_init();
     boot_identify_mapping();
-    boot_initpgtable_mapping();
+    boot_kernel_mapping();
 
-    u64 free_pg = early_pgtable_mem_free();
+    u64 free_pg = idmap_pt_info();
     kprintf("early identify pgtable total pages = %d, free = %d\n", EARLY_PGTABLE_NR_PAGES, free_pg);
 }
 

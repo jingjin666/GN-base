@@ -1,4 +1,4 @@
-ENTRY(main);
+ENTRY(_start);
 
 SECTIONS
 {
@@ -16,23 +16,23 @@ SECTIONS
         *(.rodata*)
     }
 
-	. = ALIGN(4096);
-	app_rodata_end = .;
-	app_data_start = .;
+    . = ALIGN(4096);
+    app_rodata_end = .;
+    app_data_start = .;
     .data :
     {
         *(.data*)
     }
     app_data_end = .;
-	app_bss_start = .;
+    app_bss_start = .;
     .bss :
     {
         *(.bss*)
     }
 
-	. = ALIGN(4096);
-	app_bss_end = .;
-	app_end = .;
+    . = ALIGN(4096);
+    app_bss_end = .;
+    app_end = .;
 
     /DISCARD/ :
     {

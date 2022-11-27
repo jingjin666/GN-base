@@ -53,6 +53,7 @@ static inline unsigned long pbase_to_vbase(unsigned long pbase)
     return pbase - RAM_PBASE + RAM_VBASE;
 }
 
-int pg_map(pgd_t *pgd_p, unsigned long vaddr, unsigned long paddr, unsigned long size, unsigned long attr, unsigned long (*pg_alloc)(unsigned long));
+int idmap_pt_map(pgd_t *pgd_p, unsigned long vaddr, unsigned long paddr, unsigned long size, unsigned long attr, unsigned long (*pt_alloc)(unsigned long));
+int pt_map(pgd_t *pgd_p, unsigned long vaddr, unsigned long paddr, unsigned long size, unsigned long attr, unsigned long (*pg_alloc)(unsigned long));
 
 #endif

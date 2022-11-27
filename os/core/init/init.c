@@ -18,6 +18,7 @@
 #include <task.h>
 #include <scheduler.h>
 #include <elf_loader.h>
+#include <elf.h>
 
 #include "init.h"
 
@@ -166,51 +167,20 @@ static struct tcb idle_task;
 extern unsigned long idle_stack;
 static void idle_task_initialize(void)
 {
-    task_create(&idle_task, (task_entry)idle, "idle", CONFIG_MAX_TASK_PRIORITY-1, (void *)&idle_stack, CONFIG_IDLE_TASK_STACKSIZE, TASK_TYPE_KERNEL, &kernel_addrspace);
+    task_create(&idle_task, \
+                    (task_entry)idle, \
+                    "idle", \
+                    CONFIG_MAX_TASK_PRIORITY-1, \
+                    (void *)&idle_stack, \
+                    CONFIG_IDLE_TASK_STACKSIZE, \
+                    TASK_TYPE_KERNEL, \
+                    &kernel_addrspace);
     sched_init(&idle_task);
 }
-#if 0
-static struct tcb kernel_task;
-static uint8_t kernel_stack[CONFIG_DEFAULT_TASK_STACKSIZE];
-void kernel_main(void)
-{
-    int k = 0;
-    while (1)
-    {
-        kprintf("kernel main k = %d\n", k++);
-        wfi();
-    }
-}
 
-static struct tcb kernel_task1;
-static uint8_t kernel_stack1[CONFIG_DEFAULT_TASK_STACKSIZE];
-void kernel_main1(void)
-{
-    int k = 50;
-    while (1)
-    {
-        kprintf("kernel main1 k = %d\n", k++);
-        wfi();
-    }
-}
-#endif
-static void kernel_task_create(void)
-{
-#if 0
-    task_create(&kernel_task, (task_entry)kernel_main, "kernel task", CONFIG_DEFAULT_TASK_PRIORITY, (void *)kernel_stack, CONFIG_DEFAULT_TASK_STACKSIZE, TASK_TYPE_KERNEL, &kernel_addrspace);
-    sched_attach(&kernel_task);
-
-    task_create(&kernel_task1, (task_entry)kernel_main1, "kernel task1", CONFIG_DEFAULT_TASK_PRIORITY, (void *)kernel_stack1, CONFIG_DEFAULT_TASK_STACKSIZE, TASK_TYPE_KERNEL, &kernel_addrspace);
-    sched_attach(&kernel_task1);
-#endif
-}
-
-struct addrspace user_addrspace;
 static struct tcb root_task;
-static uint8_t root_stack[CONFIG_DEFAULT_TASK_STACKSIZE];
-static struct image_region user_image;
 static struct chin_elf user_elf;
-static void user_elf_initialize(struct chin_elf *elf)
+static void boot_user_elf(struct tcb *task, struct chin_elf *elf)
 {
     int ret;
 
@@ -225,19 +195,43 @@ static void user_elf_initialize(struct chin_elf *elf)
     elf->buffer = (uint8_t *)&user_start;
     elf->size = (uint64_t)&user_end - (uint64_t)&user_start;
 
-    ret = elf_initialize(elf);
+    ret = elf_initialize(task, elf);
     if (ret < 0) {
         PANIC();
     }
 }
 
+#define USER_STACK_TOP    ((1UL << VA_BITS) - CONFIG_DEFAULT_TASK_STACKSIZE)
 static void root_task_create(void)
 {
-    user_elf_initialize(&user_elf);
+    task_create(&root_task, \
+                (task_entry)user_elf.e_entry, \
+                "root task", \
+                CONFIG_DEFAULT_TASK_PRIORITY, \
+                (void *)USER_STACK_TOP, \
+                CONFIG_DEFAULT_TASK_STACKSIZE, \
+                TASK_TYPE_USER, \
+                &user_addrspace);
 
-    while(1);
-    //task_create(&root_task, (task_entry)user_elf->entry, "root task", CONFIG_DEFAULT_TASK_PRIORITY, (void *)root_stack, CONFIG_DEFAULT_TASK_STACKSIZE, TASK_TYPE_USER, &user_addrspace);
-    //sched_attach(&root_task);
+    // 解析app.elf并加载到root_task
+    boot_user_elf(&root_task, &user_elf);
+
+    // 给用户任务映射设备内存
+    struct mem_region dev_region;
+    dev_region.pbase = UART_PBASE;
+    dev_region.vbase = 0x0000000f00000000UL;
+    dev_region.size = 0x1000;
+    as_map(root_task.addrspace, &dev_region, 0, RAM_DEVICE);
+
+    // 给用户任务映射stack
+    void *stack = gran_alloc(g_heap, CONFIG_DEFAULT_TASK_STACKSIZE);
+    struct mem_region stack_region;
+    stack_region.pbase = vbase_to_pbase((unsigned long)stack);
+    stack_region.vbase = USER_STACK_TOP;
+    stack_region.size  = CONFIG_DEFAULT_TASK_STACKSIZE;
+    as_map(root_task.addrspace, &stack_region, PF_R|PF_W, RAM_NORMAL);
+
+    sched_attach(&root_task);
 }
 
 void init_kernel(void)
@@ -285,9 +279,6 @@ void init_kernel(void)
 
     // 创建idle任务并初始化调度器
     idle_task_initialize();
-
-    // 创建两个内核线程
-    kernel_task_create();
 
     // 创建第一个用户线程
     root_task_create();

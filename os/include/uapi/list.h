@@ -1,10 +1,6 @@
 #ifndef __UAPI_LIST_H
 #define __UAPI_LIST_H
 
-/*
- * Copied from include/linux/...
- */
-
 #include "util.h"
 
 #undef NULL
@@ -14,24 +10,31 @@
 #define NULL ((void *)0)
 #endif
 
+#define container_of(ptr, type, member) \
+  ((type *)((uintptr_t)(ptr) - offsetof(type, member)))
+
+/*
+ * Copied from include/linux/...
+ */
+
 typedef struct list_head {
 	struct list_head *next, *prev;
 } list_t;
+
+/*
+ * Simple doubly linked list implementation.
+ *
+ * Some of the internal functions ("__xxx") are useful when
+ * manipulating whole lists rather than single entries, as
+ * sometimes we already know the next/prev entries and we can
+ * generate better code by using them directly rather than
+ * using the generic single-entry routines.
+ */
 
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
-
-#define list_foreach(pos, head, type, member) \
-	for((pos) = container_of((head)->next, type, member); \
-	     &(pos)->member != (head); \
-	     (pos) = container_of((pos)->member.next, type, member))
-
-#define list_foreach_entry(pos, head, member)				\
-    for (pos = container_of((head)->next, typeof(*pos), member);    \
-         &pos->member != (head);    \
-         pos = container_of(pos->member.next, typeof(*pos), member))
 
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {

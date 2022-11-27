@@ -13,20 +13,21 @@
 #include <pagetable.h>
 #include <gran.h>
 #include <init.h>
-#include <elf.h>
+#include <task.h>
+#include <mmap.h>
 
 #include "addrspace.h"
 
 extern const struct mem_region kernel_dev_ram[];
 
 struct addrspace kernel_addrspace;
+struct addrspace user_addrspace;
 
-static unsigned long pg_alloc(size_t size)
+static unsigned long pt_calloc(size_t size)
 {
     void *v_page = gran_alloc(g_heap, size);
-    unsigned long p_page = vbase_to_pbase((unsigned long)v_page);
-    kprintf("p_page = %p\n", p_page);
-    return p_page;
+    k_memset(v_page, 0, size);
+    return (unsigned long)v_page;
 }
 
 static int region_map(struct page_table *pgtable, struct mem_region *region, pgprot_t prot)
@@ -36,7 +37,7 @@ static int region_map(struct page_table *pgtable, struct mem_region *region, pgp
     unsigned long size = region->size;
     unsigned long attr = pgprot_val(prot);
 
-    return pg_map((pgd_t *)pgtable, vaddr, paddr, size, attr, pg_alloc);
+    return pt_map((pgd_t *)pgtable, vaddr, paddr, size, attr, pt_calloc);
 }
 
 static int kernel_as_image_mapping(struct image_region *image)
@@ -89,18 +90,19 @@ static int kernel_as_ram_mapping(struct mem_region *region)
 static void kernel_as_switch(void)
 {
     kprintf("kernel_addrspace = %p\n", &kernel_addrspace.pg_table);
+    kprintf("user_addrspace = %p\n", &user_addrspace.pg_table);
 
     unsigned long ks_pbase = vbase_to_pbase((unsigned long)&kernel_addrspace.pg_table);
+    unsigned long us_pbase = vbase_to_pbase((unsigned long)&user_addrspace.pg_table);
 
     /* TTBR0 */
     u64 ttbr0;
-    MSR("TTBR0_EL1", 0/*ks_pbase*/);
+    MSR("TTBR0_EL1", us_pbase);
     MRS("TTBR0_EL1", ttbr0);
     kprintf("TTBR0_EL1 = 0x%lx\n", ttbr0);
 
     /* TTBR1 */
     u64 ttbr1;
-
     MSR("TTBR1_EL1", ks_pbase);
     MRS("TTBR1_EL1", ttbr1);
     kprintf("TTBR1_EL1 = 0x%lx\n", ttbr1);
@@ -111,9 +113,36 @@ static void kernel_as_switch(void)
     kprintf("switch to kernel addrspace ok\n");
 }
 
-void as_switch(struct addrspace *as)
+void as_switch(struct addrspace *as, unsigned long type)
 {
+    return ;
+    kprintf("switch to addrspace = %p, type = %p\n", &as->pg_table, type);
 
+    unsigned long pbase = vbase_to_pbase((unsigned long)&as->pg_table);
+    if (type == TASK_TYPE_KERNEL) {
+        #if 0
+        /* TTBR1 */
+        u64 ttbr1;
+        MSR("TTBR1_EL1", pbase);
+        MRS("TTBR1_EL1", ttbr1);
+        kprintf("TTBR1_EL1 = %p\n", ttbr1);
+        #endif
+    } else if (type == TASK_TYPE_USER) {
+        /* TTBR0 */
+        u64 ttbr0;
+        MSR("TTBR0_EL1", pbase);
+        MRS("TTBR0_EL1", ttbr0);
+        kprintf("TTBR0_EL1 = %p\n", ttbr0);
+
+        // flush tlb
+        flush_TLB();
+    } else {
+        PANIC();
+    }
+
+
+
+    kprintf("switch to addrspace ok\n");
 }
 
 void as_initialize(void)
@@ -130,31 +159,36 @@ void as_initialize(void)
     kernel_as_switch();
 }
 
-static unsigned long _pg_alloc(size_t size)
-{
-    void *v_page = gran_alloc(g_heap, size);
-    //unsigned long p_page = vbase_to_pbase((unsigned long)v_page);
-    //kprintf("p_page = %p\n", p_page);
-    //return p_page;
-    kprintf("v_page = %p\n", v_page);
-    return (unsigned long)v_page;
-}
-
-int as_map(struct addrspace *as, struct mem_region *region, uint32_t flag)
+int as_map(struct addrspace *as, struct mem_region *region, uint32_t prot, RAM_TYPE_e type)
 {
     unsigned long vaddr = region->vbase;
     unsigned long paddr = region->pbase;
     unsigned long size = region->size;
-    unsigned long attr;
+    unsigned long attr = PROT_DEFAULT | PTE_USER | PTE_WRITE | PTE_PXN | PTE_UXN;
 
-    if (flag == (PF_R|PF_X)) {
-        attr = pgprot_val(PAGE_KERNEL_ROX);
-    } else if (flag == (PF_R|PF_W)) {
-        attr = pgprot_val(PAGE_KERNEL);
+    if (prot & PROT_READ) {
+       attr |= PTE_RDONLY;
+    }
+
+    if (prot & PROT_EXEC) {
+        attr &= ~PTE_UXN;
+    }
+
+    if (prot & PROT_WRITE) {
+        attr &= ~PTE_RDONLY;
+    }
+
+    if (type == RAM_NORMAL) {
+        // normal ram
+        attr |= PTE_ATTRINDX(MT_NORMAL);
+    } else if (type == RAM_DEVICE) {
+        // device ram
+        attr |= PTE_ATTRINDX(MT_DEVICE_nGnRE);
     } else {
         // todo
         PANIC();
     }
 
-    return pg_map((pgd_t *)&as->pg_table, vaddr, paddr, size, attr, _pg_alloc);
+    kprintf("as_map pbase:%p vbase:%p size:%p attr:%p\n", region->pbase, region->vbase, region->size, attr);
+    return pt_map((pgd_t *)&as->pg_table, vaddr, paddr, size, attr, pt_calloc);
 }

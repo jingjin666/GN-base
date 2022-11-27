@@ -158,7 +158,7 @@
 #define PTE_HYP_XN		(_AT(pteval_t, 1) << 54)	/* HYP XN */
 
 #define PTE_ADDR_LOW (((1UL << (CONFIG_ARM64_VA_BITS - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
-#define PTE_ADDR_MASK PTE_ADDR_LOW
+#define PTE_ADDR_MASK (~((1UL << PAGE_SHIFT) - 1))
 
 /*
  * AttrIndx[2:0] encoding (mapping attributes defined in the MAIR* registers).

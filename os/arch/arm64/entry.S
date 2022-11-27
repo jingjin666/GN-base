@@ -76,7 +76,7 @@ cache_disable_done:
     dsb     sy
     isb
 
-// MMU前设置C堆栈,注意此刻SP必须为物理地址
+    // MMU前设置C堆栈,注意此刻SP必须为物理地址
     adr     x1, boot_stack
     mov     sp, x1
 

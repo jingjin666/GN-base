@@ -97,14 +97,18 @@ void task_init(struct tcb *task, uint8_t type)
     task->sched_priority = CONFIG_DEFAULT_TASK_PRIORITY;
     task->timeslice = CONFIG_RR_INTERVAL;
 
+    task->type = type;
+
     context_init(&task->context, type);
 
     task_setup_name(task, NULL);
+
+    INIT_LIST_HEAD(&task->mm.link_head);
 }
 
 void task_switch(struct tcb *from, struct tcb *to)
 {
-    as_switch(to->addrspace);
+    as_switch(to->addrspace, to->type);
 }
 
 void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as)
@@ -126,7 +130,7 @@ void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t p
     task->stack = stack;
     task->stack_size = stack_size;
     context_set_stack(&task->context, stack, stack_size);
-    context_stack_init(&task->context);
 
+    context_set_params(&task->context, 0, 1, 2, 3, 4, 5, 6, 7);
     task->addrspace = as;
 }
