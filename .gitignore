@@ -16,5 +16,8 @@
 !.vscode/
 !.vscode/launch.json
 !.vscode/tasks.json
+!musl-1.2.3.tar.gz
+!musl-1.2.3/
 
+build/config/env.gni
 out/*

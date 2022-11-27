@@ -18,7 +18,10 @@ ifneq ($(LIBGCC),)
 	@echo "env_libs = \"$(LIBGCC)\"" >> $@
 endif
 
-env_prepare:$(TOP_DIR)/build/config/env.gni
+$(TOP_DIR)/app/musl-1.2.3/out/lib/libc.a:
+	@cd $(TOP_DIR)/app/musl-1.2.3 && ./configure --prefix=./out CROSS_COMPILE=aarch64-none-elf- && make && make install
+
+env_prepare:$(TOP_DIR)/build/config/env.gni $(TOP_DIR)/app/musl-1.2.3/out/lib/libc.a
 	@echo "General env prepare..."
 
 clean:

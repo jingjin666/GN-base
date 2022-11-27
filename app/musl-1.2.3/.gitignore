@@ -1,0 +1,16 @@
+!*.mak
+!*.in
+!*.awk
+!*.sed
+!*.mailmap
+!*dynamic.list
+
+*.o
+*.lo
+*.a
+*.so
+*.so.1
+config.mak
+lib/musl-gcc.specs
+/obj/
+/out/
