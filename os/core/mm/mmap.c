@@ -7,10 +7,12 @@
 #include <k_debug.h>
 #include <scheduler.h>
 #include <task.h>
+#include <uapi/errors.h>
+#include <uapi/util.h>
 
 #include "mmap.h"
 
-#define MMAP_DEBUG
+//#define MMAP_DEBUG
 #ifdef MMAP_DEBUG
 #define mmap_dbg kdbg
 #define mmap_err kerr
@@ -22,6 +24,9 @@
 #define mmap_warn(fmt, ...)
 #define mmap_info(fmt, ...)
 #endif
+
+#define MAX_ERRNO	4096
+#define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
 
 #include <init.h>
 #include <gran.h>
@@ -41,6 +46,17 @@ unsigned long sys_brk(unsigned long brk)
     kprintf("sys_brk(%p)\n", brk);
     if (brk < mm->start_brk) {
         goto out;
+    }
+
+    int heap_size = brk - mm->brk;
+    if (heap_size > 0) {
+        unsigned long vaddr = (unsigned long)mmap_calloc(heap_size);
+        struct mem_region region;
+        region.pbase = vbase_to_pbase(vaddr);
+        region.vbase = mm->brk;
+        region.size  = heap_size;
+        as_map(current->addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+        //dump_pgtable_verbose(&current->addrspace->pg_table, 0);
     }
 
     mm->brk = brk;
@@ -77,25 +93,100 @@ void sys_dumpvma(void)
     kprintf("------------------------------------------\n");
 }
 
-void find_free_vma(struct mm_area *mm, struct vm_area *vma, size_t len)
+unsigned long find_free_vma(struct mm_area *mm, struct vm_area *vma, size_t len)
 {
 	struct vm_area *_vma;
 
     if (list_empty(&mm->link_head)) {
         vma->vm_start = mm->mmap_base - len;
         vma->vm_end = mm->mmap_base;
+        return vma->vm_start;
     }
     
 	list_for_each_entry(_vma, &mm->link_head, link_head)
 	{
         vma->vm_end = _vma->vm_start;
         vma->vm_start = _vma->vm_start - len;
-        break;
+        return vma->vm_start;
 	}
+
+    return -1;
 }
 
-unsigned long sys_mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
+unsigned long mmap_region(unsigned long addr, unsigned long len, unsigned long prot)
 {
+    int ret = -EINVAL;
+    struct tcb *current = this_task();
+
+    unsigned long vaddr = (unsigned long)mmap_calloc(len);
+
+    struct mem_region region;
+    region.pbase = vbase_to_pbase(vaddr);
+    region.vbase = addr;
+    region.size  = len;
+
+    ret = as_map(current->addrspace, &region, prot, RAM_NORMAL);
+    if (!ret) {
+        //dump_pgtable_verbose(&current->addrspace->pg_table, 0);
+        return addr;
+    }
+
+    return ret;
+}
+
+unsigned long do_mmap(unsigned long addr, unsigned long len, unsigned long prot, unsigned long flags)
+{
+    unsigned long ret = -EINVAL;
+    struct tcb *current = this_task();
+    struct mm_area *mm = &current->mm;
+
+    mmap_dbg("do_mmap: addr = %p\n", addr);
+
+    //sys_dumpvma();
+
+    struct vm_area *vma = (struct vm_area *)mmap_calloc(sizeof(struct vm_area));
+    INIT_LIST_HEAD(&vma->link_head);
+    vma->vm_mm = mm;
+    vma->vm_prot = prot;
+    vma->vm_flags = flags;
+    if (flags == (MAP_PRIVATE))
+        k_strcpy(vma->vm_name, "MAP_PRIVATE");
+    else if (flags == (MAP_PRIVATE | MAP_ANONYMOUS))
+        k_strcpy(vma->vm_name, "MAP_PRIVATE | MAP_ANONYMOUS");
+    else if (flags == (MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED))
+        k_strcpy(vma->vm_name, "MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED");
+    else if (flags == (MAP_SHARED))
+        k_strcpy(vma->vm_name, "MAP_SHARED");
+    else if (flags == (MAP_SHARED | MAP_ANONYMOUS))
+        k_strcpy(vma->vm_name, "MAP_SHARED | MAP_ANONYMOUS");
+    else if (flags == (MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED))
+        k_strcpy(vma->vm_name, "MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED");
+    else
+        k_strcpy(vma->vm_name, "UNKNOWN");
+
+    if (!addr) {
+        // 寻找合适的一块VM_AREA
+        addr = find_free_vma(mm, vma, len);
+    } else {
+        vma->vm_start = addr;
+        vma->vm_end = addr + len;
+    }
+
+    list_add(&vma->link_head, &mm->link_head);
+
+    sys_dumpvma();
+
+    mmap_dbg("do_mmap: addr = %p\n", addr);
+
+    ret = mmap_region(addr, len, prot);
+
+    return ret;
+}
+
+unsigned long sys_mmap(unsigned long start, unsigned long len, unsigned long prot, unsigned long flags, unsigned long fd, unsigned long off)
+{
+    unsigned long ret = -EINVAL;
+
     if (flags & MAP_PRIVATE) {
         // 私有映射
         // 对映射区域得写入数据会产生映射文件的复制，即私人得“写时复写”对此区域得任何修改都不会写回到原文件
@@ -135,63 +226,30 @@ unsigned long sys_mmap(void *start, size_t len, int prot, int flags, int fd, off
         }
     } else {
         mmap_err("Unsupport mmap flags");
-        return MAP_FAILED;
+        ret = -EINVAL;
+        goto out;
     }
 
-    if (len == 0) {
-        return MAP_FAILED;
+    if (!len) {
+        ret = -EINVAL;
+        goto out;
     }
 
-    struct tcb *current = this_task();
-    struct mm_area *mm = &current->mm;
-    struct mem_region region;
+    len = PAGE_ALIGN(len);
+    start = PAGE_ALIGN(start);
 
-    sys_dumpvma();
-
-    struct vm_area *vma = (struct vm_area *)mmap_calloc(sizeof(struct vm_area));
-    INIT_LIST_HEAD(&vma->link_head);
-    vma->vm_mm = mm;
-    vma->vm_prot = prot;
-    vma->vm_flags = flags;
-    if (flags == (MAP_PRIVATE))
-        k_strcpy(vma->vm_name, "MAP_PRIVATE");
-    else if (flags == (MAP_PRIVATE | MAP_ANONYMOUS))
-        k_strcpy(vma->vm_name, "MAP_PRIVATE | MAP_ANONYMOUS");
-    else if (flags == (MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED))
-        k_strcpy(vma->vm_name, "MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED");
-    else if (flags == (MAP_SHARED))
-        k_strcpy(vma->vm_name, "MAP_SHARED");
-    else if (flags == (MAP_SHARED | MAP_ANONYMOUS))
-        k_strcpy(vma->vm_name, "MAP_SHARED | MAP_ANONYMOUS");
-    else if (flags == (MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED))
-        k_strcpy(vma->vm_name, "MAP_SHARED | MAP_ANONYMOUS | MAP_FIXED");
-    else
-        k_strcpy(vma->vm_name, "UNKNOWN");
-
-    mmap_dbg("start = %p\n", start);
-    if (start == NULL) {
-        // 寻找合适的一块VM_AREA
-        find_free_vma(mm, vma, len);
-        start = vma->vm_start;
-    } else {
-        vma->vm_start = start;
-        vma->vm_end = start + len;
+    ret = do_mmap(start, len, prot, flags);
+    if (IS_ERR_VALUE(ret)) {
+        ret = -ENOMEM;
+        goto out;
     }
-    mmap_dbg("start = %p\n", start);
 
-    list_add(&vma->link_head, &mm->link_head);
+out:
+    return ret;
+}
 
-    sys_dumpvma();
-
-    unsigned long vaddr = (unsigned long)mmap_calloc(len);
-
-    region.pbase = vbase_to_pbase(vaddr);
-    region.vbase = start;
-    region.size  = len;
-
-    as_map(current->addrspace, &region, prot, RAM_NORMAL);
-
-    dump_pgtable_verbose(&current->addrspace->pg_table, 0);
-
-    return start;
+unsigned long sys_munmap(unsigned long addr, unsigned long len)
+{
+    // todo
+    return 0;
 }

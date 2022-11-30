@@ -2,7 +2,7 @@ module_name = get_path_info(rebase_path("."), "name")
 
 source_set(module_name) {
     sources = [
-        "crt.S",
+        "crt1.c",
         "main.c",
     ]
 

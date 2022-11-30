@@ -131,6 +131,5 @@ void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t p
     task->stack_size = stack_size;
     context_set_stack(&task->context, stack, stack_size);
 
-    context_set_params(&task->context, 0, 1, 2, 3, 4, 5, 6, 7);
     task->addrspace = as;
 }

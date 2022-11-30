@@ -1,13 +1,6 @@
 #ifndef __MMAP_H
 #define __MMAP_H
 
-#include <chinos/config.h>
-
-#include <k_stdint.h>
-#include <k_stddef.h>
-
-#define MAP_FAILED ((void *) -1)
-
 #define MAP_SHARED     0x01
 #define MAP_PRIVATE    0x02
 #define MAP_SHARED_VALIDATE 0x03
@@ -67,6 +60,6 @@
 
 unsigned long sys_brk(unsigned long brk);
 
-unsigned long sys_mmap(void *start, size_t len, int prot, int flags, int fd, off_t off);
+unsigned long sys_mmap(unsigned long start, unsigned long len, unsigned long prot, unsigned long flags, unsigned long fd, unsigned long off);
 
 #endif

@@ -1,2 +1,0 @@
-_start:
-    b main

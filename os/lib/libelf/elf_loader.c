@@ -325,6 +325,8 @@ int elf_initialize(struct tcb *task, struct chin_elf *elf)
 
     elf_dbg("elf->entry = %p\n", elf->e_entry);
 
+    context_set_entry(&task->context, elf->e_entry);
+
     load_segments(elf);
 
     populate_segments(task, elf);

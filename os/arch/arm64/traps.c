@@ -5,6 +5,7 @@
 #include <scheduler.h>
 #include <uapi/vsyscall.h>
 #include <syscalls.h>
+#include <fault.h>
 
 typedef unsigned long (*sys_callback)(unsigned long *params);
 
@@ -13,6 +14,9 @@ static sys_callback svc_handlers[] = {
     [__NR_writev]       = vsys_writev,
     [__NR_brk]          = vsys_brk,
     [__NR_mmap]         = vsys_mmap,
+    [__NR_munmap]       = vsys_munmap,
+    [__NR_exit]         = vsys_exit,
+    [__NR_exit_group]   = vsys_exit_group,
 };
 
 static void svc_handler(void)

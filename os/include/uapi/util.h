@@ -38,13 +38,14 @@
   /* The unsued code or data */
 #define unused_code __attribute__((unused))
 #define unused_data __attribute__((unused))
-  
+
+#define likely(x)	__builtin_expect(!!(x), 1)
+#define unlikely(x)	__builtin_expect(!!(x), 0)
 #else
+#define likely
+#define unlikely
 #define offsetof(type, member) ((size_t)( (char *)&(((type *)0)->member) - (char *)0 ))
 #endif
-
-#define KB *1024
-#define MB *1024 KB
 
 #define bitmask(x) (UL(1) << (x))
 #define lowbitsmask(x) (bitmask(x) - UL(1))
