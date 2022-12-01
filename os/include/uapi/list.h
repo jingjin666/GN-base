@@ -10,9 +10,6 @@
 #define NULL ((void *)0)
 #endif
 
-#define container_of(ptr, type, member) \
-  ((type *)((uintptr_t)(ptr) - offsetof(type, member)))
-
 /*
  * Copied from include/linux/...
  */

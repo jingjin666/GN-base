@@ -3,8 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-
-#define wfi()       asm volatile("wfi" : : : "memory")
+#include <unistd.h>
 
 int data = 0x1234;
 int bss;
@@ -40,6 +39,8 @@ int main(int argc, char *argv[])
     free(addr1);
     free(addr2);
 #endif
+
+#if 0
     addr4 = malloc(127*1024);
     printf("malloc: addr4 = %p\n", addr4);
 
@@ -49,10 +50,10 @@ int main(int argc, char *argv[])
     addr4 = malloc(128*1024);
     printf("malloc: addr4 = %p\n", addr4);
     free(addr4);
-
+#endif
     while(1)
     {
         printf("main data = %p, bss = %p\n", data++, bss--);
-        wfi();
+        sleep(1);
     }
 }

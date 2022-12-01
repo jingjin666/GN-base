@@ -30,4 +30,6 @@ typedef int64_t off_t;
 typedef int16_t pid_t;
 typedef int16_t tid_t;
 
+typedef uint64_t asid_t;
+
 #endif

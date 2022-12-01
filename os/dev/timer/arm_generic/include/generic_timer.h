@@ -20,6 +20,7 @@
 
 #define CNT_CTL     CNTV_CTL
 
+#define TICKS_PER_NS            (TIMER_CLOCK_HZ / ULL(1000) / ULL(1000) / ULL(1000))
 #define TICKS_PER_US            (TIMER_CLOCK_HZ / ULL(1000) / ULL(1000))
 #define TICKS_PER_MS            (TIMER_CLOCK_HZ / ULL(1000))
 #define TICKS_PER_S             (TIMER_CLOCK_HZ)
@@ -34,9 +35,21 @@ struct generic_timer_config_desc
     uint16_t irq_sphys;
 };
 
-static inline void generic_timer_reset(uint64_t us)
+static inline ticks_t get_current_time(void)
 {
-    MSR(CNT_TVAL, us * TICKS_PER_US);
+    ticks_t time;
+    MRS(CNT_VCT, time);
+    return time;
+}
+
+static inline void set_deadline(ticks_t deadline)
+{
+    MSR(CNT_CVAL, deadline);
+}
+
+static inline void generic_timer_reset(uint64_t ms)
+{
+    MSR(CNT_TVAL, ms *TICKS_PER_MS);
     MSR(CNT_CTL, 1);
 }
 

@@ -148,10 +148,13 @@ void BOOTPHYSIC boot_setup_mmu(void)
     kprintf("MAIR_EL1 = 0x%lx\n", mair);
 
     /* 当前Core支持的物理地址范围 */
-    u64 mmfr0, pa_range;
+    u64 mmfr0, pa_range, asid_range;
     MRS("ID_AA64MMFR0_EL1", mmfr0);
     pa_range = bitfield_get(mmfr0, ID_AA64MMFR0_PARANGE_SHIFT, 4);
     kprintf("ID_AA64MMFR0_EL1.PARANGE = 0x%lx\n", pa_range);
+
+    asid_range = bitfield_get(mmfr0, ID_AA64MMFR0_ASID_SHIFT, 4);
+    kprintf("ID_AA64MMFR0_EL1.ASIDBITS = 0x%lx\n", asid_range);
 
     u64 tcr;
     MRS("TCR_EL1", tcr);

@@ -28,12 +28,15 @@
 #define task_info(fmt, ...)
 #endif
 
-#define INVALID_PROCESS_ID       (tid_t)-1
+#define INVALID_TASK_ID          (tid_t)-1
 #define MAX_TASKS_MASK           (CONFIG_MAX_TASKS-1)
 #define PIDHASH(tid)             ((tid) & MAX_TASKS_MASK)
 
 volatile tid_t g_lasttid = 0;
 struct tid_hash g_tidhash[CONFIG_MAX_TASKS] = {0};
+
+#define ASID_BITS   16
+static asid_t g_asidpool[1 << ASID_BITS];
 
 /* This is the name for un-named tasks */
 static const char g_noname[] = "<noname>";
@@ -52,9 +55,9 @@ void task_setup_name(struct tcb *task, const char *name)
 void task_release_tid(tid_t tid)
 {
 	int hash_ndx = PIDHASH(tid);
-	
+
 	g_tidhash[hash_ndx].task  = NULL;
-  	g_tidhash[hash_ndx].tid   = INVALID_PROCESS_ID;
+  	g_tidhash[hash_ndx].tid   = INVALID_TASK_ID;
 }
 
 int task_assign_tid(struct tcb *task)
@@ -86,6 +89,28 @@ int task_assign_tid(struct tcb *task)
 	return -ESRCH;
 }
 
+asid_t task_alloc_asid(struct tcb *task)
+{
+    if (task->asid)
+        return task->asid;
+
+	for (int idx = 0; idx < ARRAY_SIZE(g_asidpool); idx++)
+    {
+        if (g_asidpool[idx] == 0) {
+            asid_t asid = idx + 1;
+            g_asidpool[idx] = asid << 48;
+            task->asid = g_asidpool[idx];
+            task_dbg("task->asid = %p\n", task->asid);
+            return task->asid;
+        }
+    }
+}
+
+void task_free_asid(asid_t asid)
+{
+    g_asidpool[(asid >> 48) - 1] = 0;
+}
+
 void task_init(struct tcb *task, uint8_t type)
 {
     k_memset(task, 0, sizeof(struct tcb));
@@ -108,7 +133,8 @@ void task_init(struct tcb *task, uint8_t type)
 
 void task_switch(struct tcb *from, struct tcb *to)
 {
-    as_switch(to->addrspace, to->type);
+    task_alloc_asid(to);
+    as_switch(to->addrspace, to->type, to->asid);
 }
 
 void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as)

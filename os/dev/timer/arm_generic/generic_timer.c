@@ -8,8 +8,6 @@
 
 #include "generic_timer.h"
 
-volatile uint64_t g_system_timer = 0;
-
 static struct generic_timer_config_desc default_generic_timer_desc = {
     .irq_phys = IRQN_NON_SECURE_PHYS_TIMER,
     .irq_virt = IRQN_VIRT_TIMER,
@@ -27,11 +25,17 @@ void generic_timer_init(timer_t *timer)
     MRS(CNTFRQ, timer_cntfrq);
     kprintf("arm generic timer freq %lld Hz\n", timer_cntfrq);
 
+#ifdef TIMER_DEADLINE
+    uint64_t c_val;
+    MRS(CNT_VCT, c_val);
+    kprintf("c_val = %ld\n", c_val);
+    MSR(CNT_CVAL, c_val + TIMER_RELOAD);
+#else
     uint32_t cnt_tval;
     MSR(CNT_TVAL, TIMER_RELOAD);
     MRS(CNT_TVAL, cnt_tval);
     kprintf("cnt_tval = %ld\n", cnt_tval);
-
+#endif
     uint32_t cnt_ctl;
     MSR(CNT_CTL, 1);
     MRS(CNT_CTL, cnt_ctl);

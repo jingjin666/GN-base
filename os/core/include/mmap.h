@@ -59,7 +59,7 @@
 #define POSIX_MADV_DONTNEED   4
 
 unsigned long sys_brk(unsigned long brk);
-
 unsigned long sys_mmap(unsigned long start, unsigned long len, unsigned long prot, unsigned long flags, unsigned long fd, unsigned long off);
+unsigned long sys_munmap(unsigned long addr, unsigned long len);
 
 #endif

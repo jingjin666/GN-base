@@ -7,6 +7,8 @@
 #include <k_assert.h>
 #include <k_debug.h>
 #include <task.h>
+#include <generic_timer.h>
+#include <timer.h>
 
 #include "scheduler.h"
 
@@ -22,9 +24,6 @@
 #define sched_warn(fmt, ...)
 #define sched_info(fmt, ...)
 #endif
-
-extern volatile uint64_t g_system_timer;
-#define clock_systime_ticks() g_system_timer
 
 /* 当前运行的任务 */
 struct tcb *g_current_task = NULL;
@@ -130,6 +129,75 @@ void sched_detach(struct tcb *task)
     }
 }
 
+void sched_unblock(struct tcb *task)
+{
+    assert(task != NULL);
+
+    task->task_state = TSTATE_TASK_READYTORUN;
+    list_add(&task->link_head, &g_readytorun[task->sched_priority].tasks_head);
+
+    int index = task->sched_priority / 8;
+    int remain = task->sched_priority % 8;
+    if (index > MAX_PRIORITY_BITMAP_INDEX) {
+        sched_dbg("task priority[%d] invalid\n", task->sched_priority);
+        return;
+    }
+
+    g_priority_group |= bitmask(index);
+    g_priority_bitmap[index] |= bitmask(remain);
+}
+
+void sched_block(struct tcb *task)
+{
+    assert(task != NULL);
+
+    list_del_init(&task->link_head);
+    task->task_state = TSTATE_TASK_PENDING;
+
+    int index = task->sched_priority / 8;
+    int remain = task->sched_priority % 8;
+    if (index > MAX_PRIORITY_BITMAP_INDEX) {
+        sched_dbg("task priority[%d] invalid\n", task->sched_priority);
+        return;
+    }
+
+    if (list_empty(&g_readytorun[task->sched_priority].tasks_head)) {
+        if ((g_priority_bitmap[index] &= (~ bitmask(remain))) == 0) {
+            // 当此优先级所在组全部清空后，才清空优先级分组标识
+            g_priority_group &= (~ bitmask(index));
+        }
+    }
+}
+
+void sched_sleep(struct tcb *task)
+{
+    assert(task != NULL);
+
+    sched_dbg("schedule_sleep %s\n", task->name);
+
+    list_del_init(&task->link_head);
+    task->task_state = TSTATE_TASK_SLEEPING;
+
+    int index = task->sched_priority / 8;
+    int remain = task->sched_priority % 8;
+    if (index > MAX_PRIORITY_BITMAP_INDEX) {
+        sched_dbg("task priority[%d] invalid\n", task->sched_priority);
+        return;
+    }
+
+    if (list_empty(&g_readytorun[task->sched_priority].tasks_head)) {
+        if ((g_priority_bitmap[index] &= (~ bitmask(remain))) == 0) {
+            // 当此优先级所在组全部清空后，才清空优先级分组标识
+            g_priority_group &= (~ bitmask(index));
+        }
+    }
+
+    list_add_tail(&task->link_head, &g_pendingtasks.tasks_head);
+
+    sched_dbg("sleep dump pend\n");
+    dump_queue(&g_pendingtasks.tasks_head);
+}
+
 void sched_wake(struct tcb *task)
 {
     list_del_init(&task->link_head);
@@ -152,9 +220,9 @@ void sched_pending_check(void)
     sched_dbg("schedule_pending_check\n");
     list_for_each_entry_safe(pend_task, pend_task_tmp, &g_pendingtasks.tasks_head, link_head)
     {
-        int64_t remain_ticks = clock_systime_ticks() - pend_task->readytime;
+        int64_t remain_ticks = pend_task->readytime - get_current_time();
         sched_dbg("next_task name is %s, tid = %d, readytime = %lld, remain_ticks = %lld\n", pend_task->name, pend_task->tid, pend_task->readytime, remain_ticks);
-        if (remain_ticks >= 0) {
+        if (remain_ticks < 0) {
             sched_dbg("wake pend task %s\n", pend_task->name);
             sched_wake(pend_task);
             sched_attach(pend_task);

@@ -71,7 +71,7 @@ typedef struct tcb
     void           *stack;
     uint32_t        stack_size;
 
-    time64_t        readytime;
+    ticks_t         readytime;
     uint32_t        timeslice;
     uint8_t         type;
 
@@ -80,6 +80,8 @@ typedef struct tcb
     addrspace_t    *addrspace;
 
     mm_area_t       mm;
+
+    asid_t          asid;
 } tcb_t;
 
 typedef struct vm_area

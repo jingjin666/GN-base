@@ -90,16 +90,8 @@ static int kernel_as_ram_mapping(struct mem_region *region)
 static void kernel_as_switch(void)
 {
     kprintf("kernel_addrspace = %p\n", &kernel_addrspace.pg_table);
-    kprintf("user_addrspace = %p\n", &user_addrspace.pg_table);
 
     unsigned long ks_pbase = vbase_to_pbase((unsigned long)&kernel_addrspace.pg_table);
-    unsigned long us_pbase = vbase_to_pbase((unsigned long)&user_addrspace.pg_table);
-
-    /* TTBR0 */
-    u64 ttbr0;
-    MSR("TTBR0_EL1", us_pbase);
-    MRS("TTBR0_EL1", ttbr0);
-    kprintf("TTBR0_EL1 = 0x%lx\n", ttbr0);
 
     /* TTBR1 */
     u64 ttbr1;
@@ -113,36 +105,35 @@ static void kernel_as_switch(void)
     kprintf("switch to kernel addrspace ok\n");
 }
 
-void as_switch(struct addrspace *as, unsigned long type)
+void as_switch(struct addrspace *as, unsigned long type, asid_t asid)
 {
-    return ;
-    kprintf("switch to addrspace = %p, type = %p\n", &as->pg_table, type);
+    //kprintf("switch to addrspace = %p, type = %p, asid = %p\n", &as->pg_table, type, asid);
 
     unsigned long pbase = vbase_to_pbase((unsigned long)&as->pg_table);
     if (type == TASK_TYPE_KERNEL) {
+        // 除了idle外，没有其他内核进程，无需进行页表切换
         #if 0
         /* TTBR1 */
         u64 ttbr1;
         MSR("TTBR1_EL1", pbase);
         MRS("TTBR1_EL1", ttbr1);
-        kprintf("TTBR1_EL1 = %p\n", ttbr1);
+        //kprintf("TTBR1_EL1 = %p\n", ttbr1);
         #endif
     } else if (type == TASK_TYPE_USER) {
         /* TTBR0 */
         u64 ttbr0;
-        MSR("TTBR0_EL1", pbase);
+        MSR("TTBR0_EL1", pbase | asid);
         MRS("TTBR0_EL1", ttbr0);
-        kprintf("TTBR0_EL1 = %p\n", ttbr0);
+        //kprintf("TTBR0_EL1 = %p\n", ttbr0);
 
+        // 如果asid分配完毕需要刷新tlb
         // flush tlb
-        flush_TLB();
+        //flush_TLB();
     } else {
         PANIC();
     }
 
-
-
-    kprintf("switch to addrspace ok\n");
+    //kprintf("switch to addrspace ok\n");
 }
 
 void as_initialize(void)

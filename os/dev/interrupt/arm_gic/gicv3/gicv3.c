@@ -11,6 +11,7 @@
 #include <irq.h>
 #include <task.h>
 #include <scheduler.h>
+#include <timer.h>
 
 #include <gic.h>
 
@@ -379,10 +380,12 @@ void gic_initialize(void)
 
 void decode_irq(void)
 {
-    kprintf("decode_irq\n");
+    //kprintf("decode_irq\n");
 
     uint32_t irq;
     uint64_t icciar1;
+
+    timer_update_timestamp();
 
     MRS(ICC_IAR1_EL1, icciar1);
     //kprintf("ICC_IAR1_EL1 = %p\n", icciar1);
@@ -403,7 +406,7 @@ void decode_irq(void)
     MSR(ICC_EOIR1_EL1, icciar1);
 
     // 恢复当前任务的上下文
-    kprintf("restore_current_context\n");
+    //kprintf("restore_current_context\n");
     restore_current_context();
 }
 

@@ -5,47 +5,69 @@
 
 #include <asm/const.h>
 
-#if defined(CONFIG_ARCH_32)
-#define BITS_PER_LONG 32
-#elif defined(CONFIG_ARCH_64)
-#define BITS_PER_LONG 64
-#else
-#error "Unkowned ARCH"
-#endif
+#define BITS_PER_LONG (sizeof(long) * 8)
 
 #ifdef __GNUC__
-#define offsetof(type, member) __builtin_offsetof(type, member)
-  /* The noreturn attribute informs GCC that the function will not return.
-   * C11 adds _Noreturn keyword (see stdnoreturn.h)
-   */
+
+#define weak __attribute__((__weak__))
+
+#define hidden __attribute__((__visibility__("hidden")))
+
+#define weak_alias(old, new) \
+	extern __typeof(old) new __attribute__((__weak__, __alias__(#old)))
+
+/* The noreturn attribute informs GCC that the function will not return.
+ * C11 adds _Noreturn keyword (see stdnoreturn.h)
+ */
 #define noreturn_function __attribute__ ((noreturn))
     
-  /* Code locate */
+/* Code locate */
 #define locate_code(n) __attribute__ ((section(n)))
     
-  /* Data alignment */
+/* Data alignment */
 #define aligned_data(n) __attribute__ ((aligned(n)))
   
-  /* Data location */
+/* Data location */
 #define locate_data(n) __attribute__ ((section(n)))
     
-  /* The packed attribute informs GCC that the structure elements are packed,
-   * ignoring other alignment rules.
-   */
+/* The packed attribute informs GCC that the structure elements are packed,
+ * ignoring other alignment rules.
+ */
 #define begin_packed_struct
 #define end_packed_struct __attribute__ ((packed))
     
-  /* The unsued code or data */
+/* The unsued code or data */
 #define unused_code __attribute__((unused))
 #define unused_data __attribute__((unused))
 
 #define likely(x)	__builtin_expect(!!(x), 1)
 #define unlikely(x)	__builtin_expect(!!(x), 0)
+
+#define offsetof(type, member) __builtin_offsetof(type, member)
+
 #else
+
 #define likely
 #define unlikely
+
 #define offsetof(type, member) ((size_t)( (char *)&(((type *)0)->member) - (char *)0 ))
+
 #endif
+
+#define container_of(ptr, type, member) \
+      ((type *)((uintptr_t)(ptr) - offsetof(type, member)))
+
+#define max(x, y) ({				\
+	typeof(x) _max1 = (x);			\
+	typeof(y) _max2 = (y);			\
+	(void) (&_max1 == &_max2);		\
+	_max1 > _max2 ? _max1 : _max2; })
+
+#define min(x, y) ({				\
+	typeof(x) _min1 = (x);			\
+	typeof(y) _min2 = (y);			\
+	(void) (&_min1 == &_min2);		\
+	_min1 < _min2 ? _min1 : _min2; })
 
 #define bitmask(x) (UL(1) << (x))
 #define lowbitsmask(x) (bitmask(x) - UL(1))
