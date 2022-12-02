@@ -13,7 +13,7 @@ typedef struct sched_queue
 typedef struct tid_hash
 {
 	struct tcb *task;
-	tid_t  tid;
+	pid_t  tid;
 } tid_hash_t;
 
 extern struct tcb *g_current_task;
@@ -24,5 +24,10 @@ extern struct sched_queue g_readytorun[CONFIG_MAX_TASK_PRIORITY];
 void sched_init(struct tcb *idle);
 void sched_attach(struct tcb *task);
 void sched_detach(struct tcb *task);
+void sched_unblock(struct tcb *task);
+void sched_block(struct tcb *task);
+void sched_sleep(struct tcb *task);
+void sched_wake(struct tcb *task);
+void sched_pending_check(void);
 void schedule(void);
 #endif

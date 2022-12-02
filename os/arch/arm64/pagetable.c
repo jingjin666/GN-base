@@ -163,10 +163,10 @@ int idmap_pt_map(pgd_t *pgd_p, u64 vaddr, u64 paddr, u64 size, u64 attr, u64 (*p
     pgd_t *pgd = pgd_p;
 
     assert(pgd_p);
-    assert(!(vaddr & lowbitsmask(PAGE_SHIFT)));
-    assert(!(paddr & lowbitsmask(PAGE_SHIFT)));
+    assert(!(vaddr & bitmask(PAGE_SHIFT)));
+    assert(!(paddr & bitmask(PAGE_SHIFT)));
     assert(size);
-    assert(size <= bitmask(VA_BITS));
+    assert(size <= bit(VA_BITS));
 
     // 获取PGD索引
     idx = (vaddr >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1);
@@ -444,10 +444,10 @@ int pt_map(pgd_t *pgd_p, u64 vaddr, u64 paddr, u64 size, u64 attr, u64 (*pt_allo
     pgd_t *pgd = pgd_p;
 
     assert(pgd_p);
-    assert(!(vaddr & lowbitsmask(PAGE_SHIFT)));
-    assert(!(paddr & lowbitsmask(PAGE_SHIFT)));
+    assert(!(vaddr & bitmask(PAGE_SHIFT)));
+    assert(!(paddr & bitmask(PAGE_SHIFT)));
     assert(size);
-    assert(size <= bitmask(VA_BITS));
+    assert(size <= bit(VA_BITS));
 
     // 获取PGD索引
     idx = (vaddr >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1);

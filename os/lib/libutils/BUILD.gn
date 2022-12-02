@@ -1,0 +1,16 @@
+module_name = get_path_info(rebase_path("."), "name")
+
+source_set(module_name) {
+    sources = [
+        "bitmap.c",
+        "find_bit.c",
+    ]
+
+    configs = [
+        "//build/config:kernel",
+    ]
+}
+
+config("kernel") {
+    include_dirs =  [ "./include" ]
+}

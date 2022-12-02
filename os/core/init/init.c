@@ -175,6 +175,10 @@ static void idle_task_initialize(void)
                     CONFIG_IDLE_TASK_STACKSIZE, \
                     TASK_TYPE_KERNEL, \
                     &kernel_addrspace);
+
+    task_set_tid(&idle_task, 0);
+    task_set_tgid(&idle_task, 0);
+
     sched_init(&idle_task);
 }
 
@@ -280,7 +284,7 @@ void init_kernel(void)
     // 创建idle任务并初始化调度器
     idle_task_initialize();
 
-    // 创建第一个用户线程
+    // 创建第一个用户进程
     root_task_create();
 
     // timer初始化

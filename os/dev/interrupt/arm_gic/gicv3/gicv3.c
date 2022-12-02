@@ -150,7 +150,7 @@ struct gicv3_config_desc defualt_gicv3_config_desc =
 #define ICC_DIR_EL1 "S3_0_C12_C11_1"
 #define ICC_SGI1R_EL1 "S3_0_C12_C11_5"
 
-#define INTID_MASK  lowbitsmask(24)
+#define INTID_MASK  bitmask(24)
 
 static uint32_t gic_max_int;
 

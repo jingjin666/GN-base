@@ -8,14 +8,14 @@
 
 #include <cache.h>
 
-#define LOUU(x)    (((x) >> 27)        & lowbitsmask(3))
-#define LOC(x)     (((x) >> 24)        & lowbitsmask(3))
-#define LOUIS(x)   (((x) >> 21)        & lowbitsmask(3))
-#define CTYPE(x,n) (((x) >> (n*3))     & lowbitsmask(3))
+#define LOUU(x)    (((x) >> 27)        & bitmask(3))
+#define LOC(x)     (((x) >> 24)        & bitmask(3))
+#define LOUIS(x)   (((x) >> 21)        & bitmask(3))
+#define CTYPE(x,n) (((x) >> (n*3))     & bitmask(3))
 
-#define LINEBITS(s)     (((s) & lowbitsmask(3)) + 4)
-#define ASSOC(s)        ((((s) >> 3) & lowbitsmask(10)) + 1)
-#define NSETS(s)        ((((s) >> 13) & lowbitsmask(15)) + 1)
+#define LINEBITS(s)     (((s) & bitmask(3)) + 4)
+#define ASSOC(s)        ((((s) >> 3) & bitmask(10)) + 1)
+#define NSETS(s)        ((((s) >> 13) & bitmask(15)) + 1)
 
 enum arm_cache_type {
     ARMCacheI =    1,

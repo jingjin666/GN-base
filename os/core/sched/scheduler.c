@@ -98,8 +98,8 @@ void sched_attach(struct tcb *task)
         return;
     }
 
-    g_priority_group |= bitmask(index);
-    g_priority_bitmap[index] |= bitmask(remain);
+    g_priority_group |= bit(index);
+    g_priority_bitmap[index] |= bit(remain);
 }
 
 void sched_detach(struct tcb *task)
@@ -122,9 +122,9 @@ void sched_detach(struct tcb *task)
     }
 
     if (list_empty(&g_readytorun[task->sched_priority].tasks_head)) {
-        if ((g_priority_bitmap[index] &= (~ bitmask(remain))) == 0) {
+        if ((g_priority_bitmap[index] &= (~ bit(remain))) == 0) {
             // 当此优先级所在组全部清空后，才清空优先级分组标识
-            g_priority_group &= (~ bitmask(index));
+            g_priority_group &= (~ bit(index));
         }
     }
 }
@@ -143,8 +143,8 @@ void sched_unblock(struct tcb *task)
         return;
     }
 
-    g_priority_group |= bitmask(index);
-    g_priority_bitmap[index] |= bitmask(remain);
+    g_priority_group |= bit(index);
+    g_priority_bitmap[index] |= bit(remain);
 }
 
 void sched_block(struct tcb *task)
@@ -162,9 +162,9 @@ void sched_block(struct tcb *task)
     }
 
     if (list_empty(&g_readytorun[task->sched_priority].tasks_head)) {
-        if ((g_priority_bitmap[index] &= (~ bitmask(remain))) == 0) {
+        if ((g_priority_bitmap[index] &= (~ bit(remain))) == 0) {
             // 当此优先级所在组全部清空后，才清空优先级分组标识
-            g_priority_group &= (~ bitmask(index));
+            g_priority_group &= (~ bit(index));
         }
     }
 }
@@ -186,9 +186,9 @@ void sched_sleep(struct tcb *task)
     }
 
     if (list_empty(&g_readytorun[task->sched_priority].tasks_head)) {
-        if ((g_priority_bitmap[index] &= (~ bitmask(remain))) == 0) {
+        if ((g_priority_bitmap[index] &= (~ bit(remain))) == 0) {
             // 当此优先级所在组全部清空后，才清空优先级分组标识
-            g_priority_group &= (~ bitmask(index));
+            g_priority_group &= (~ bit(index));
         }
     }
 
@@ -209,8 +209,8 @@ void sched_wake(struct tcb *task)
         return;
     }
 
-    g_priority_group |= bitmask(index);
-    g_priority_bitmap[index] |= bitmask(remain);
+    g_priority_group |= bit(index);
+    g_priority_bitmap[index] |= bit(remain);
 }
 
 void sched_pending_check(void)

@@ -16,7 +16,7 @@ static inline void enable_trapfpu(void)
 {
     word_t cptr;
     MRS("cptr_el2", cptr);
-    cptr |= (bitmask(10) | bitmask(31));
+    cptr |= (bit(10) | bit(31));
     MSR("cptr_el2", cptr);
 }
 
@@ -25,7 +25,7 @@ static inline void disable_trapfpu(void)
 {
     word_t cptr;
     MRS("cptr_el2", cptr);
-    cptr &= ~(bitmask(10) | bitmask(31));
+    cptr &= ~(bit(10) | bit(31));
     MSR("cptr_el2", cptr);
 }
 

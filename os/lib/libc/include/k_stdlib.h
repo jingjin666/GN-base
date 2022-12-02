@@ -3,6 +3,9 @@
 
 #include <chinos/config.h>
 
+void *k_calloc(size_t, size_t);
+void k_free(void *);
+
 /* Random number generation */
 void      srand(unsigned int seed);
 int       rand(void);

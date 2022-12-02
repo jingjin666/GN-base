@@ -57,8 +57,8 @@ typedef struct tcb
 {
     struct list_head link_head;
 
-    tid_t           tid;                        /* This is the task ID of the task */
-    tid_t           tgid;                       /* This is the task group ID of the task */
+    pid_t           tid;                        /* This is the task ID of the task */
+    pid_t           tgid;                       /* This is the task group ID of the task */
     uint8_t         sched_priority;             /* Current priority of the task */
     uint8_t         init_priority;              /* Initial priority of the task */
     task_entry      entry;                      /* Entry Point into the task */
@@ -102,10 +102,20 @@ typedef struct vm_area
 	char vm_name[64];
 } vm_area_t;
 
-void task_setup_name(tcb_t *task, const char *name);
-void task_release_tid(tid_t tid);
-int  task_assign_tid(tcb_t *task);
-void task_init(tcb_t *task, uint8_t type);
-void task_switch(tcb_t *from, tcb_t *to);
+static inline void task_set_tid(struct tcb *task, pid_t tid)
+{
+    task->tid = tid;
+}
+
+static inline void task_set_tgid(struct tcb *task, pid_t tgid)
+{
+    task->tgid = tgid;
+}
+
+void task_setup_name(struct tcb *task, const char *name);
+void task_release_tid(pid_t tid);
+int  task_assign_tid(struct tcb *task);
+void task_init(struct tcb *task, uint8_t type);
+void task_switch(struct tcb *from, struct tcb *to);
 void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as);
 #endif

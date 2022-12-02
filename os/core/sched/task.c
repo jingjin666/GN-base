@@ -28,11 +28,11 @@
 #define task_info(fmt, ...)
 #endif
 
-#define INVALID_TASK_ID          (tid_t)-1
+#define INVALID_TASK_ID          (pid_t)(-1)
 #define MAX_TASKS_MASK           (CONFIG_MAX_TASKS-1)
-#define PIDHASH(tid)             ((tid) & MAX_TASKS_MASK)
+#define TIDHASH(tid)             ((tid) & MAX_TASKS_MASK)
 
-volatile tid_t g_lasttid = 0;
+volatile pid_t g_lasttid = 0;
 struct tid_hash g_tidhash[CONFIG_MAX_TASKS] = {0};
 
 #define ASID_BITS   16
@@ -52,9 +52,9 @@ void task_setup_name(struct tcb *task, const char *name)
     task->name[CONFIG_TASK_NAME_SIZE] = '\0';
 }
 
-void task_release_tid(tid_t tid)
+void task_release_tid(pid_t tid)
 {
-	int hash_ndx = PIDHASH(tid);
+	int hash_ndx = TIDHASH(tid);
 
 	g_tidhash[hash_ndx].task  = NULL;
   	g_tidhash[hash_ndx].tid   = INVALID_TASK_ID;
@@ -62,7 +62,7 @@ void task_release_tid(tid_t tid)
 
 int task_assign_tid(struct tcb *task)
 {
-	tid_t next_tid;
+	pid_t next_tid;
 	int   hash_ndx;
 	int   tries;
 
@@ -75,7 +75,7 @@ int task_assign_tid(struct tcb *task)
 			next_tid  = 1;
 		}
 
-		hash_ndx = PIDHASH(next_tid);
+		hash_ndx = TIDHASH(next_tid);
 		if (!g_tidhash[hash_ndx].task) {
 			task_dbg("%s %d\n", task->name, next_tid);
 			g_tidhash[hash_ndx].task  = task;
@@ -133,8 +133,12 @@ void task_init(struct tcb *task, uint8_t type)
 
 void task_switch(struct tcb *from, struct tcb *to)
 {
-    task_alloc_asid(to);
-    as_switch(to->addrspace, to->type, to->asid);
+    if (from->tgid != to->tgid) {
+        task_dbg("switch to %d[%d] from %d[%d]\n", to->tgid, to->tid, from->tgid, from->tid);
+
+        task_alloc_asid(to);
+        as_switch(to->addrspace, to->type, to->asid);
+    }
 }
 
 void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as)
@@ -142,7 +146,10 @@ void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t p
     task_init(task, type);
 
     task_setup_name(task, name);
-    task_assign_tid(task);
+    if (type == TASK_TYPE_USER) {
+        task_assign_tid(task);
+        task_set_tgid(task, task->tid);
+    }
 
     assert(priority < CONFIG_MAX_TASK_PRIORITY);
     task->init_priority = priority;

@@ -3,6 +3,7 @@
 
 #include <chinos/config.h>
 
+#include <k_stddef.h>
 #include <k_stdarg.h>
 
 struct va_format
@@ -14,4 +15,10 @@ struct va_format
 void kprintf(const char *fmt, ...);
 void _kprintf(const char *fmt, ...);
 void kputs(const char *s);
+
+static inline int k_vsnprintf(char *buf, size_t size, const char *format, va_list ap)
+{
+    return 0;
+}
+
 #endif

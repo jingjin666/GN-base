@@ -6,6 +6,7 @@ group(module_name) {
         "libc",
         "libelf",
         "libsyscalls",
+        "libutils",
     ]
 }
 
@@ -15,5 +16,6 @@ config("kernel") {
         "libc:kernel",
         "libelf:kernel",
         "libsyscalls:kernel",
+        "libutils:kernel",
     ]
 }

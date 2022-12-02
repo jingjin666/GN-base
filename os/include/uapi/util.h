@@ -3,9 +3,11 @@
 
 #include <chinos/config.h>
 
-#include <asm/const.h>
+#include <k_stddef.h>
+#include <const.h>
 
-#define BITS_PER_LONG (sizeof(long) * 8)
+#define BITS_PER_LONG       64
+#define BITS_PER_LONG_LONG  64
 
 #ifdef __GNUC__
 
@@ -43,34 +45,54 @@
 #define likely(x)	__builtin_expect(!!(x), 1)
 #define unlikely(x)	__builtin_expect(!!(x), 0)
 
+#ifndef offsetof
 #define offsetof(type, member) __builtin_offsetof(type, member)
+#endif
 
 #else
 
 #define likely
 #define unlikely
 
-#define offsetof(type, member) ((size_t)( (char *)&(((type *)0)->member) - (char *)0 ))
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
 
 #endif
 
-#define container_of(ptr, type, member) \
-      ((type *)((uintptr_t)(ptr) - offsetof(type, member)))
+#ifndef container_of
+#define container_of(ptr, type, member) ({                      \
+        const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+        (type *)( (char *)__mptr - offsetof(type,member) );})
+#endif
 
+#ifndef max
 #define max(x, y) ({				\
 	typeof(x) _max1 = (x);			\
 	typeof(y) _max2 = (y);			\
 	(void) (&_max1 == &_max2);		\
 	_max1 > _max2 ? _max1 : _max2; })
+#endif
 
+#ifndef min
 #define min(x, y) ({				\
 	typeof(x) _min1 = (x);			\
 	typeof(y) _min2 = (y);			\
 	(void) (&_min1 == &_min2);		\
 	_min1 < _min2 ? _min1 : _min2; })
+#endif
 
-#define bitmask(x) (UL(1) << (x))
-#define lowbitsmask(x) (bitmask(x) - UL(1))
+#ifndef roundup
+#define roundup(x, y) (                                \
+{                                                      \
+	const typeof(y) __y = y;		       \
+	(((x) + (__y - 1)) / __y) * __y;	       \
+}                                                      \
+)
+#endif
+
+#define bit(nr) (UL(1) << (nr))
+#define bitmask(nr) (bit(nr) - UL(1))
 
 #define ALIGN(size, align) ((((size) + (align) - 1) / (align))*(align))
 
@@ -90,12 +112,12 @@
 
 static inline unsigned long bitfield_get(unsigned long value, unsigned int begin, unsigned int width)
 {
-    return (value >> begin) & lowbitsmask(width);
+    return (value >> begin) & bitmask(width);
 }
 
 static inline unsigned long bitfield_clean(unsigned long value, unsigned int begin, unsigned int width)
 {
-    value &= ~(lowbitsmask(width) << begin);
+    value &= ~(bitmask(width) << begin);
     return value;
 }
 
