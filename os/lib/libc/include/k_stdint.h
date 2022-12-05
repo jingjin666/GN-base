@@ -29,6 +29,6 @@ typedef int64_t off_t;
 
 typedef int pid_t;
 
-typedef uint64_t asid_t;
+typedef unsigned long asid_t;
 
 #endif

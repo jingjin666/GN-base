@@ -176,8 +176,7 @@ static void idle_task_initialize(void)
                     TASK_TYPE_KERNEL, \
                     &kernel_addrspace);
 
-    task_set_tid(&idle_task, 0);
-    task_set_tgid(&idle_task, 0);
+    task_set_tgid(&idle_task, idle_task.tid);
 
     sched_init(&idle_task);
 }
@@ -216,6 +215,8 @@ static void root_task_create(void)
                 CONFIG_DEFAULT_TASK_STACKSIZE, \
                 TASK_TYPE_USER, \
                 &user_addrspace);
+
+    task_set_tgid(&root_task, root_task.tid);
 
     // 解析app.elf并加载到root_task
     boot_user_elf(&root_task, &user_elf);
@@ -280,6 +281,8 @@ void init_kernel(void)
     func ins = &kernel_rodata_start;
     ins();
 #endif
+
+    asid_initialize();
 
     // 创建idle任务并初始化调度器
     idle_task_initialize();

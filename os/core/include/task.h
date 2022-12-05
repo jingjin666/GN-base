@@ -112,6 +112,7 @@ static inline void task_set_tgid(struct tcb *task, pid_t tgid)
     task->tgid = tgid;
 }
 
+void asid_initialize(void);
 void task_setup_name(struct tcb *task, const char *name);
 void task_release_tid(pid_t tid);
 int  task_assign_tid(struct tcb *task);

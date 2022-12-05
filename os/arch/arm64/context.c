@@ -107,4 +107,3 @@ void restore_current_context(void)
     );
 }
 
-

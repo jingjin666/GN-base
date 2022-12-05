@@ -37,13 +37,14 @@
 #define DECLARE_BITMAP(name,bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]
 
-int __bitmap_weight(const unsigned long *bitmap, int bits);
+int  __bitmap_weight(const unsigned long *bitmap, int bits);
 void __bitmap_or(unsigned long *dst, const unsigned long *bitmap1,
 		 const unsigned long *bitmap2, int bits);
-int __bitmap_and(unsigned long *dst, const unsigned long *bitmap1,
+int  __bitmap_and(unsigned long *dst, const unsigned long *bitmap1,
 		 const unsigned long *bitmap2, unsigned int bits);
-int __bitmap_equal(const unsigned long *bitmap1,
+int  __bitmap_equal(const unsigned long *bitmap1,
 		   const unsigned long *bitmap2, unsigned int bits);
+void bitmap_set(unsigned long *map, unsigned int start, int len);
 void bitmap_clear(unsigned long *map, unsigned int start, int len);
 
 #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
@@ -204,4 +205,5 @@ static inline int bitmap_equal(const unsigned long *src1,
 		return !k_memcmp(src1, src2, nbits / 8);
 	return __bitmap_equal(src1, src2, nbits);
 }
-#endif /* __LINUX_BITMAP_H */
+
+#endif

@@ -125,10 +125,6 @@ void as_switch(struct addrspace *as, unsigned long type, asid_t asid)
         MSR("TTBR0_EL1", pbase | asid);
         MRS("TTBR0_EL1", ttbr0);
         //kprintf("TTBR0_EL1 = %p\n", ttbr0);
-
-        // 如果asid分配完毕需要刷新tlb
-        // flush tlb
-        //flush_TLB();
     } else {
         PANIC();
     }
