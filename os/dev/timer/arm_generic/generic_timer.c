@@ -8,9 +8,13 @@
 #include "generic_timer.h"
 
 static struct generic_timer_config_desc default_generic_timer_desc = {
-    .irq_phys = IRQN_NON_SECURE_PHYS_TIMER,
-    .irq_virt = IRQN_VIRT_TIMER,
-    .irq_sphys = IRQN_SECURE_PHYS_TIMER,
+    .ns_el2_irq_phys = IRQN_NS_EL2_PHYS_TIMER,
+    .ns_el2_irq_virt = IRQN_NS_EL2_VIRT_TIMER,
+
+    .el1_irq_phys = IRQN_EL1_PHYS_TIMER,
+    .el1_irq_virt = IRQN_EL1_VIRT_TIMER,
+
+    .el3_irq_phys = IRQN_EL3_PHYS_TIMER
 };
 
 static uint64_t timer_cntfrq;
@@ -40,6 +44,6 @@ void generic_timer_init(timer_t *timer)
     MRS(CNT_CTL, cnt_ctl);
     kprintf("cnt_ctl = %p\n", cnt_ctl);
 
-    timer->irq = default_generic_timer_desc.irq_virt;
+    timer->irq = default_generic_timer_desc.el1_irq_virt;
     timer->clock_freq = timer_cntfrq;
 }

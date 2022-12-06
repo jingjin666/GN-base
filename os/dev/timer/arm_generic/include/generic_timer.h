@@ -7,18 +7,23 @@
 #include <board.h>
 #include <timer.h>
 
-#define CNT_PCT     "cntpct_el0"
-#define CNT_VCT     "cntvct_el0"
+#define CNT_PCT         "cntpct_el0"
+#define CNT_VCT         "cntvct_el0"
 
-#define CNTV_CTL    "cntv_ctl_el0"
-#define CNTP_CTL    "cntp_ctl_el0"
+#define CNTV_CTL        "cntv_ctl_el0"
+#define CNTP_CTL        "cntp_ctl_el0"
 
-#define CNT_TVAL    "cntv_tval_el0"
-#define CNT_CVAL    "cntv_cval_el0"
+#define CNTP_TVAL       "cntp_tval_el0"
+#define CNTP_CVAL       "cntp_cval_el0"
 
-#define CNTFRQ      "cntfrq_el0"
+#define CNTV_TVAL       "cntv_tval_el0"
+#define CNTV_CVAL       "cntv_cval_el0"
 
-#define CNT_CTL     CNTV_CTL
+#define CNTFRQ          "cntfrq_el0"
+
+#define CNT_CTL         CNTV_CTL
+#define CNT_TVAL        CNTV_TVAL
+#define CNT_CVAL        CNTV_CVAL
 
 #define TICKS_PER_NS            (TIMER_CLOCK_HZ / ULL(1000) / ULL(1000) / ULL(1000))
 #define TICKS_PER_US            (TIMER_CLOCK_HZ / ULL(1000) / ULL(1000))
@@ -27,12 +32,18 @@
 
 struct generic_timer_config_desc
 {
-    // Non-Secure Physicl Timer IRQ
-    uint16_t irq_phys;
-    // Virtual Timer IRQ
-    uint16_t irq_virt;
-    // Secure Physicl Timer IRQ
-    uint16_t irq_sphys;
+    // Non-Secure EL2 Physicl Timer IRQ
+    uint16_t ns_el2_irq_phys;
+    // Non-Secure EL2 Virtual Timer IRQ
+    uint16_t ns_el2_irq_virt;
+
+    // EL1 Physicl Timer IRQ
+    uint16_t el1_irq_phys;
+    // EL1 Virt Timer IRQ
+    uint16_t el1_irq_virt;
+
+    // EL3 Physicl Timer IRQ
+    uint16_t el3_irq_phys;
 };
 
 static inline ticks_t get_current_time(void)
