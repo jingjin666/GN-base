@@ -1,6 +1,6 @@
 #include <chinos/config.h>
 
-#include <k_stdint.h>
+#include <k_stddef.h>
 #include <k_unistd.h>
 #if 0
 #include <uapi/syscall.h>

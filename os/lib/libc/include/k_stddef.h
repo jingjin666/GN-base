@@ -10,13 +10,6 @@
 #define NULL ((void *)0)
 #endif
 
-typedef unsigned long size_t;
-typedef long  ssize_t;
-
-enum
-{
-    ERROR = -1,
-    OK = 0,
-};
+#include <k_types.h>
 
 #endif

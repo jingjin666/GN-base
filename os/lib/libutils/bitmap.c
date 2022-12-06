@@ -1,5 +1,4 @@
 #include <k_stdio.h>
-#include <k_stdint.h>
 #include <k_stddef.h>
 #include <k_stdbool.h>
 #include <uapi/util.h>

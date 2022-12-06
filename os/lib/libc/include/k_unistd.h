@@ -3,7 +3,7 @@
 
 #include <chinos/config.h>
 
-#include <k_stdint.h>
+#include <k_types.h>
 #include <k_time.h>
 
 int k_sleep(uint32_t seconds);

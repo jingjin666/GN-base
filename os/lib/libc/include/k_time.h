@@ -3,7 +3,7 @@
 
 #include <chinos/config.h>
 
-#include <k_stdint.h>
+#include <k_types.h>
 
 typedef uint64_t  ticks_t;        /* Cpu clock ticks */
 typedef long      time_t;         /* Holds time in seconds */

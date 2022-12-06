@@ -1,5 +1,5 @@
 #include <k_stdio.h>
-#include <k_stdint.h>
+#include <k_stddef.h>
 #include <k_assert.h>
 #include <mmap.h>
 #include <timer.h>

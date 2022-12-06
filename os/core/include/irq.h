@@ -1,7 +1,7 @@
 #ifndef __IRQ_H
 #define __IRQ_H
 
-#include <k_stdint.h>
+#include <k_types.h>
 #include <gic.h>
 
 /* This struct defines the form of an interrupt service routine */

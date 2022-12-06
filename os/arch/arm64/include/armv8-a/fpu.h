@@ -3,7 +3,7 @@
 
 #include <chinos/config.h>
 
-#include <k_stdint.h>
+#include <k_types.h>
 #include <const.h>
 #include <instructionset.h>
 #include <registerset.h>

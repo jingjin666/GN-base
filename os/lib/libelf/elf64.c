@@ -2,7 +2,6 @@
 
 #ifdef CONFIG_ARCH_64    
 #include <k_stdio.h>
-#include <k_stdint.h>
 #include <k_stddef.h>
 #include <k_assert.h>
 #include <k_debug.h>

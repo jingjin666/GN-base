@@ -4,8 +4,7 @@
 #include <chinos/config.h>
 
 #include <kernel.h>
-#include <k_stddef.h>
-#include <k_stdint.h>
+#include <k_types.h>
 #include <page-def.h>
 #include <pgtable-prot.h>
 #include <uapi/util.h>

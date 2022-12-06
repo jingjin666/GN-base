@@ -1,7 +1,7 @@
 #ifndef __K_DTOA_ENGINE_H
 #define __K_DTOA_ENGINE_H
 
-#include <k_stdint.h>
+#include <k_types.h>
 #include <k_float.h>
 
 /****************************************************************************

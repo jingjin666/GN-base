@@ -3,8 +3,7 @@
 
 #include <chinos/config.h>
 
-#include <k_stdint.h>
-#include <k_stddef.h>
+#include <k_types.h>
 #include <k_stdbool.h>
 #include <uapi/list.h>
 #include <task.h>

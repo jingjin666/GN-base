@@ -1,3 +1,4 @@
+#include <k_stddef.h>
 #include <uapi/util.h>
 
 #include "bitmap.h"

@@ -3,7 +3,7 @@
 
 #include <chinos/config.h>
 
-#include <k_stddef.h>
+#include <k_types.h>
 
 void *k_memset(void *s, int c, size_t n);
 void *k_memcpy(void *dest, const void *src, size_t n);

@@ -3,7 +3,7 @@
 
 #include <chinos/config.h>
 
-#include <k_stddef.h>
+#include <k_types.h>
 #include <const.h>
 
 #define BITS_PER_LONG       64

@@ -1,7 +1,7 @@
 #ifndef __LIBUTILS_BITOPS_H
 #define __LIBUTILS_BITOPS_H
 
-#include <k_stdint.h>
+#include <k_types.h>
 
 #define ffz(x)  __ffs(~(x))
 

@@ -1,6 +1,6 @@
 #include <chinos/config.h>
 
-#include <k_stdint.h>
+#include <k_stddef.h>
 #include <k_string.h>
 #include <k_assert.h>
 #include <task.h>
@@ -9,7 +9,7 @@
 
 #include "context.h"
 
-void context_init(struct context *ctx, uint8_t type)
+void context_init(struct context *ctx, u8 type)
 {
     k_memset(ctx, 0, sizeof(struct context));
 
@@ -47,7 +47,7 @@ void context_set_params(struct context *ctx, unsigned long p0, unsigned long p1,
     ctx->regs[X7] = p7;
 }
 
-void context_set_stack(struct context *ctx, void *stack, uint32_t size)
+void context_set_stack(struct context *ctx, void *stack, u32 size)
 {
     ctx->regs[SP] = (unsigned long)stack + size;
 }

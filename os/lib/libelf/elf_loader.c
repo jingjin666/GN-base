@@ -1,7 +1,6 @@
 #include <chinos/config.h>
 
 #include <k_stdio.h>
-#include <k_stdint.h>
 #include <k_stddef.h>
 #include <k_string.h>
 #include <k_assert.h>
@@ -168,7 +167,7 @@ static void load_segments(struct chin_elf *elf)
 
 static int copy_segment(struct chin_elf *elf, struct segment *seg)
 {
-	int retval = OK;
+	int retval = 0;
 	size_t size = seg->filesz;
 	size_t offset = seg->offset;
 	size_t mem_size = seg->memsz;
@@ -281,7 +280,7 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
 
 int elf_initialize(struct tcb *task, struct chin_elf *elf)
 {
-    int ret = OK;
+    int ret = 0;
     Elf_Ehdr elf_header;
 
     assert(elf->buffer && elf->size);

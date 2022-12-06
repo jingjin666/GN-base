@@ -1,7 +1,6 @@
 #include <chinos/config.h>
 
 #include <k_stdio.h>
-#include <k_stdint.h>
 #include <k_stddef.h>
 #include <k_string.h>
 #include <k_debug.h>

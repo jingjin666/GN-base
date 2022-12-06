@@ -2,7 +2,6 @@
 
 #include <k_assert.h>
 #include <k_stddef.h>
-#include <k_stdint.h>
 
 #include "gran.h"
 

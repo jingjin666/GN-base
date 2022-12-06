@@ -1,7 +1,7 @@
 #ifndef __ASM_INSTRUCTIONSET_H
 #define __ASM_INSTRUCTIONSET_H
 
-#include <k_stdint.h>
+#include <k_types.h>
 
 #ifndef __ASSEMBLY__
 

@@ -1,7 +1,7 @@
 #ifndef __SCHED_TIMER_H
 #define __SCHED_TIMER_H
 
-#include <k_stdint.h>
+#include <k_types.h>
 #include <k_time.h>
 
 typedef struct timer

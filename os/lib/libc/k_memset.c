@@ -1,6 +1,6 @@
 #include <chinos/config.h>
 
-#include <k_stdint.h>
+#include <k_stddef.h>
 #include <k_string.h>
 
 void *k_memset(void *s, int c, size_t n)

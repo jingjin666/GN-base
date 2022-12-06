@@ -1,5 +1,5 @@
 #include <kernel.h>
-#include <k_stdint.h>
+#include <k_stddef.h>
 #include <uapi/util.h>
 
 #include <uart.h>

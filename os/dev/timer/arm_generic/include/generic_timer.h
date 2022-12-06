@@ -1,7 +1,7 @@
 #ifndef __GENERIC_TIMER_H
 #define __GENERIC_TIMER_H
 
-#include <k_stdint.h>
+#include <k_types.h>
 #include <instructionset.h>
 #include <const.h>
 #include <board.h>

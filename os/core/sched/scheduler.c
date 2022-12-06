@@ -1,7 +1,6 @@
 #include <chinos/config.h>
 
 #include <kernel.h>
-#include <k_stdint.h>
 #include <k_stddef.h>
 #include <k_stdbool.h>
 #include <k_assert.h>
