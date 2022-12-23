@@ -14,9 +14,9 @@ static struct timer g_timer;
 
 static int timer_handler(int irq, void *context, void *arg)
 {
-#if 0
+#if 1
     static int timer_irq_cnts = 0;
-    printf("timer_handler %d\n", timer_irq_cnts++);
+    kprintf("timer_handler %d\n", timer_irq_cnts++);
 #endif
 
 #ifdef TIMER_DEADLINE

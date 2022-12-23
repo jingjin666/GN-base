@@ -1,5 +1,7 @@
-#ifndef __CONTEXT_H
-#define __CONTEXT_H
+#ifndef __ASM_CONTEXT_H
+#define __ASM_CONTEXT_H
+
+#ifndef __ASSEMBLY__
 
 #include <k_types.h>
 
@@ -54,4 +56,7 @@ void context_set_params(struct context *ctx, unsigned long p0, unsigned long p1,
                                                    unsigned long p4, unsigned long p5, unsigned long p6, unsigned long p7);
 void context_set_stack(struct context *ctx, void *stack, u32 size);
 void restore_current_context(void);
-#endif
+
+#endif /* !__ASSEMBLY__ */
+
+#endif /* __ASM_CONTEXT_H */

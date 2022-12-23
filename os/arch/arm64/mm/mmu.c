@@ -16,7 +16,7 @@
 #include <task.h>
 #include <mmap.h>
 
-#include "addrspace.h"
+#include "mmu.h"
 
 extern const struct mem_region kernel_dev_ram[];
 
@@ -93,6 +93,12 @@ static void kernel_as_switch(void)
 
     unsigned long ks_pbase = vbase_to_pbase((unsigned long)&kernel_addrspace.pg_table);
 
+    /* TTBR0 */
+    u64 ttbr0;
+    MSR("TTBR0_EL2", ks_pbase);
+    MRS("TTBR0_EL2", ttbr0);
+    kprintf("TTBR0_EL2 = 0x%lx\n", ttbr0);
+
     /* TTBR1 */
     u64 ttbr1;
     MSR("TTBR1_EL1", ks_pbase);
@@ -152,6 +158,8 @@ int as_map(struct addrspace *as, struct mem_region *region, uint32_t prot, RAM_T
     unsigned long paddr = region->pbase;
     unsigned long size = region->size;
     unsigned long attr = PROT_DEFAULT | PTE_USER | PTE_WRITE | PTE_PXN | PTE_UXN;
+
+    kprintf("as_map prot = %p\n", prot);
 
     if (prot & PROT_READ) {
        attr |= PTE_RDONLY;

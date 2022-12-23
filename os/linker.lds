@@ -2,10 +2,10 @@ ENTRY(_start);
 
 SECTIONS
 {
-    . = 0xffffff8000000000;
+    . = 0x0000000800000000;
     kernel_start = .;
     boot_physic_start = .;
-    .boot.physic : AT(ADDR(.boot.physic) - 0xffffff8000000000 + 0x40000000)
+    .boot.physic : AT(ADDR(.boot.physic) - 0x0000000800000000 + 0x40000000)
     {
         *(.entry)
         *(.boot.physic)
@@ -16,11 +16,11 @@ SECTIONS
 
     . = ALIGN(4096);
     boot_physic_end = .;
-    .boot : AT(ADDR(.boot) - 0xffffff8000000000 + 0x40000000)
+    .boot : AT(ADDR(.boot) - 0x0000000800000000 + 0x40000000)
     {
         *(.boot);
     }
-    .boot.data : AT(ADDR(.boot.data) - 0xffffff8000000000 + 0x40000000)
+    .boot.data : AT(ADDR(.boot.data) - 0x0000000800000000 + 0x40000000)
     {
         *(.boot.data);
     }
@@ -28,7 +28,7 @@ SECTIONS
     . = ALIGN(4096);
     boot_end = .;
     kernel_code_start = .;
-    .text : AT(ADDR(.text) - 0xffffff8000000000 + 0x40000000)
+    .text : AT(ADDR(.text) - 0x0000000800000000 + 0x40000000)
     {
         *(.vector);
         *(.text*)
@@ -37,7 +37,7 @@ SECTIONS
     . = ALIGN(4096);
     kernel_code_end = .;
     kernel_rodata_start = .;
-    .rodata : AT(ADDR(.rodata) - 0xffffff8000000000 + 0x40000000)
+    .rodata : AT(ADDR(.rodata) - 0x0000000800000000 + 0x40000000)
     {
         *(.rodata*)
     }
@@ -45,13 +45,13 @@ SECTIONS
     . = ALIGN(4096);
     kernel_rodata_end = .;
     kernel_data_start = .;
-    .data : AT(ADDR(.data) - 0xffffff8000000000 + 0x40000000)
+    .data : AT(ADDR(.data) - 0x0000000800000000 + 0x40000000)
     {
         *(.data*)
     }
 
     . = ALIGN(4096);
-    .stack : AT(ADDR(.stack) - 0xffffff8000000000 + 0x40000000)
+    .stack : AT(ADDR(.stack) - 0x0000000800000000 + 0x40000000)
     {
         *(.stack*)
     }
@@ -59,7 +59,7 @@ SECTIONS
     . = ALIGN(4096);
     kernel_data_end = .;
     kernel_bss_start = .;
-    .bss : AT(ADDR(.bss) - 0xffffff8000000000 + 0x40000000)
+    .bss : AT(ADDR(.bss) - 0x0000000800000000 + 0x40000000)
     {
         *(.bss*)
     }

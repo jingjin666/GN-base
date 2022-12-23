@@ -1,5 +1,7 @@
-#ifndef __ARMV8A_FPU_H
-#define __ARMV8A_FPU_H
+#ifndef __ASM_FPU_H
+#define __ASM_FPU_H
+
+#ifndef __ASSEMBLY__
 
 #include <chinos/config.h>
 
@@ -50,4 +52,6 @@ static inline void disable_fpu_EL0(void)
 
 #endif /* CONFIG_ARCH_FPU */
 
-#endif /* __ARMV8A_FPU_H */
+#endif /* !__ASSEMBLY__ */
+
+#endif /* __ASM_FPU_H */

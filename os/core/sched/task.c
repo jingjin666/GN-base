@@ -15,10 +15,15 @@
 #include <instructionset.h>
 #include <tlb.h>
 #include <uapi/util.h>
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+#include <mmu-hyper.h>
+#else
+#include <mmu.h>
+#endif
 
 #include "task.h"
 
-//#define KERNEL_SCHED_TASK_DEBUG
+#define KERNEL_SCHED_TASK_DEBUG
 #ifdef KERNEL_SCHED_TASK_DEBUG
 #define task_dbg kdbg
 #define task_err kerr
@@ -199,11 +204,14 @@ void task_switch(struct tcb *from, struct tcb *to)
 {
     asid_t asid = check_and_switch_context(to);
 
-    //task_dbg("switch to %d[%d] from %d[%d], asid = %p\n", to->tgid, to->tid, from->tgid, from->tid, asid);
+    task_dbg("switch to %d[%d] from %d[%d], asid = %p\n", to->tgid, to->tid, from->tgid, from->tid, asid);
 
     if (to->tgid != from->tgid) {
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+        hyper_as_switch(to->addrspace, to->type, asid << (BITS_PER_LONG - asid_bits));
+#else
         as_switch(to->addrspace, to->type, asid << (BITS_PER_LONG - asid_bits));
-
+#endif
         if (b_tlb_flush) {
             b_tlb_flush = false;
             flush_TLB();

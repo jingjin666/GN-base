@@ -5,12 +5,6 @@
 
 #define GIC_IRQ_PPI                     16
 
-#define GIC_IRQ_HYPER_PHYS_TIMER        26
-#define GIC_IRQ_VIRT_TIMER              27
-#define GIC_IRQ_HYPER_VIRT_TIMER        28
-#define GIC_IRQ_SECURE_PHYS_TIMER       29
-#define GIC_IRQ_NON_SECURE_PHYS_TIMER   30
-
 #define GIC_IRQ_SPI                     32
 
 #define GIC_IRQ_LPI                     8192

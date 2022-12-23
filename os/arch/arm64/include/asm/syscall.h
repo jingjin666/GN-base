@@ -1,5 +1,5 @@
-#ifndef __ARM64_SYSCALL_H
-#define __ARM64_SYSCALL_H
+#ifndef __ASM_SYSCALL_H
+#define __ASM_SYSCALL_H
 
 /*
  * Copied from app/musl-1.2.3/arch/aarch64/syscall_arch.h
@@ -84,4 +84,4 @@ static inline long __syscall6(long n, long a, long b, long c, long d, long e, lo
 #define __syscall(...) __SYSCALL_DISP(__syscall,__VA_ARGS__)
 #define syscall(...) __syscall_ret(__syscall(__VA_ARGS__))
 
-#endif
+#endif /* __ASM_SYSCALL_H */

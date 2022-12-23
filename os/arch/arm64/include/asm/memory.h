@@ -1,8 +1,8 @@
 #ifndef __ASM_MEMORY_H
 #define __ASM_MEMORY_H
 
-#ifndef __ASSEMBLY__
 #include <chinos/config.h>
+
 #include <sysreg.h>
 
 #define VA_BITS			(CONFIG_ARM64_VA_BITS)
@@ -24,5 +24,5 @@
     MAIR_ATTRIDX(MAIR_ATTR_NORMAL_NC, MT_NORMAL_NC) | \
     MAIR_ATTRIDX(MAIR_ATTR_NORMAL, MT_NORMAL) | \
     MAIR_ATTRIDX(MAIR_ATTR_NORMAL_WT, MT_NORMAL_WT))
-#endif
+
 #endif /* __ASM_MEMORY_H */

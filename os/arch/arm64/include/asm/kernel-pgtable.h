@@ -1,5 +1,5 @@
-#ifndef __KERNEL_PGTABLE_H
-#define __KERNEL_PGTABLE_H
+#ifndef __ASM_KERNEL_PGTABLE_H
+#define __ASM_KERNEL_PGTABLE_H
 
 #include <chinos/config.h>
 
@@ -67,4 +67,4 @@
 #define SWAPPER_MM_MMUFLAGS_DEVICE	(PTE_ATTRINDX(MT_DEVICE_nGnRnE) | SWAPPER_PTE_FLAGS)
 #endif
 
-#endif
+#endif /* __ASM_KERNEL_PGTABLE_H */

@@ -1,6 +1,14 @@
 #include <chinos/config.h>
 #include <registerset.h>
 
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+#define ELR     elr_el2
+#define SPSR    spsr_el2
+#else
+#define ELR     elr_el1
+#define SPSR    spsr_el1
+#endif
+
 .global vector
 
 .macro ventry label
@@ -18,7 +26,7 @@
 .endm
 
 .macro store_context
-    // store context to sp_el1(tcb->context->regs)
+    // store context to sp_elx(tcb->context->regs)
     // 保存X0~X29
     stp     x0,  x1,  [sp, #16 * 0]
     stp     x2,  x3,  [sp, #16 * 1]
@@ -37,11 +45,13 @@
     stp     x28, x29, [sp, #16 * 14]
 
     // 获取ELR
-    mrs     x9, elr_el1
+    mrs     x9, ELR
+
     // 获取SP
     mrs     x10, sp_el0
+
     // 获取SPSR
-    mrs     x11, spsr_el1
+    mrs     x11, SPSR
 
     // 保存lr(x30),ELR
     stp     lr, x9, [sp, #CTX_OFFS_LR]

@@ -1,5 +1,5 @@
-#ifndef __ARMV8A_CACHE_H
-#define __ARMV8A_CACHE_H
+#ifndef __ASM_CACHE_H
+#define __ASM_CACHE_H
 
 #include <chinos/config.h>
 
@@ -81,4 +81,4 @@ static inline unsigned long readCLID(void)
     return CLID;
 }
 
-#endif /* __ARMV8A_CACHE_H */
+#endif /* __ASM_CACHE_H */

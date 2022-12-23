@@ -1,7 +1,9 @@
-#ifndef __ADDRSPACE_H
-#define __ADDRSPACE_H
+#ifndef __ASM_ADDRSPACE_H
+#define __ASM_ADDRSPACE_H
 
 #include <chinos/config.h>
+
+#ifndef __ASSEMBLY__
 
 #include <pagetable.h>
 
@@ -23,10 +25,6 @@ typedef struct addrspace
     struct page_table pg_table;
 } addrspace_t;
 
-extern struct addrspace kernel_addrspace;
-extern struct addrspace user_addrspace;
+#endif /* !__ASSEMBLY__ */
 
-void as_switch(struct addrspace *as, unsigned long type, asid_t asid);
-void as_initialize(void);
-int  as_map(struct addrspace *as, struct mem_region *region, uint32_t prot, RAM_TYPE_e type);
 #endif

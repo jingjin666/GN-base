@@ -1,5 +1,5 @@
 arch_cpuflags =  []
-arch_cpuflags =  [ "-mcpu=cortex-a53" ]
+arch_cpuflags =  [ "-mcpu=cortex-a55" ]
 
 #arch_cpuflags += [ "-march=armv8-a+fp+simd" ]
 

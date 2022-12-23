@@ -1,7 +1,7 @@
-#ifndef __FAULT_H
-#define __FAULT_H
+#ifndef __ASM_FAULT_H
+#define __ASM_FAULT_H
 
-#include <chinos/config.h>
+#ifndef __ASSEMBLY__
 
 typedef enum fault_type{
     FAULT_INS = 0,
@@ -10,4 +10,6 @@ typedef enum fault_type{
 
 void do_page_fault(unsigned long far_el1);
 
-#endif
+#endif /* !__ASSEMBLY__ */
+
+#endif /* __ASM_FAULT_H */

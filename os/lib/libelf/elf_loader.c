@@ -225,7 +225,11 @@ static void elf_map(struct tcb *task, uintptr_t vaddr, size_t size, uint32_t fla
         prot |= PROT_EXEC;
     }
 
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    hyper_as_map(task->addrspace, &elf_region, prot, RAM_NORMAL);
+#else
     as_map(task->addrspace, &elf_region, prot, RAM_NORMAL);
+#endif
 
     //dump_pgtable_verbose(&task->addrspace->pg_table, 0);
 }

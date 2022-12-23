@@ -19,6 +19,13 @@
 #include <scheduler.h>
 #include <elf_loader.h>
 #include <elf.h>
+#include <mmap.h>
+
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+#include <mmu-hyper.h>
+#else
+#include <mmu.h>
+#endif
 
 #include "init.h"
 
@@ -167,6 +174,11 @@ static struct tcb idle_task;
 extern unsigned long idle_stack;
 static void idle_task_initialize(void)
 {
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    struct addrspace *idle_as = &hyper_kernel_addrspace;
+#else
+    struct addrspace *idle_as = &kernel_addrspace;
+#endif
     task_create(&idle_task, \
                     (task_entry)idle, \
                     "idle", \
@@ -174,7 +186,7 @@ static void idle_task_initialize(void)
                     (void *)&idle_stack, \
                     CONFIG_IDLE_TASK_STACKSIZE, \
                     TASK_TYPE_KERNEL, \
-                    &kernel_addrspace);
+                    idle_as);
 
     task_set_tgid(&idle_task, idle_task.tid);
 
@@ -204,9 +216,15 @@ static void boot_user_elf(struct tcb *task, struct chin_elf *elf)
     }
 }
 
+#if 1
 #define USER_STACK_TOP    ((1UL << VA_BITS) - CONFIG_DEFAULT_TASK_STACKSIZE)
 static void root_task_create(void)
 {
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    struct addrspace *root_as = &hyper_user_addrspace;
+#else
+    struct addrspace *root_as = &user_addrspace;
+#endif
     task_create(&root_task, \
                 (task_entry)user_elf.e_entry, \
                 "root task", \
@@ -214,7 +232,7 @@ static void root_task_create(void)
                 (void *)USER_STACK_TOP, \
                 CONFIG_DEFAULT_TASK_STACKSIZE, \
                 TASK_TYPE_USER, \
-                &user_addrspace);
+                root_as);
 
     task_set_tgid(&root_task, root_task.tid);
 
@@ -226,7 +244,11 @@ static void root_task_create(void)
     dev_region.pbase = UART_PBASE;
     dev_region.vbase = 0x0000000f00000000UL;
     dev_region.size = 0x1000;
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    hyper_as_map(root_task.addrspace, &dev_region, PROT_READ|PROT_WRITE, RAM_DEVICE);
+#else
     as_map(root_task.addrspace, &dev_region, 0, RAM_DEVICE);
+#endif
 
     // 给用户任务映射stack
     void *stack = gran_alloc(g_heap, CONFIG_DEFAULT_TASK_STACKSIZE);
@@ -234,10 +256,15 @@ static void root_task_create(void)
     stack_region.pbase = vbase_to_pbase((unsigned long)stack);
     stack_region.vbase = USER_STACK_TOP;
     stack_region.size  = CONFIG_DEFAULT_TASK_STACKSIZE;
-    as_map(root_task.addrspace, &stack_region, PF_R|PF_W, RAM_NORMAL);
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    hyper_as_map(root_task.addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+#else
+    as_map(root_task.addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+#endif
 
     sched_attach(&root_task);
 }
+#endif
 
 void init_kernel(void)
 {
@@ -265,15 +292,19 @@ void init_kernel(void)
 
     // 地址空间初始化
     kprintf("as_initialize\n");
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    hyper_as_initialize();
+#else
     as_initialize();
+#endif
 
 #if 0
     // 地址空间映射权限测试
     // Data Abort
-    //extern unsigned long kernel_code_start;
+    extern unsigned long kernel_code_start;
     //u64 *data = &kernel_code_start;
-    //kprintf("data = %p\n", *data);
-    //*data = 0x12345678;
+    kprintf("data = %p\n", *data);
+    *data = 0x12345678;
 
     // Instruction Abort
     typedef void (*func)(void);
@@ -283,6 +314,8 @@ void init_kernel(void)
 #endif
 
     asid_initialize();
+
+    kprintf("test----\n");
 
     // 创建idle任务并初始化调度器
     idle_task_initialize();

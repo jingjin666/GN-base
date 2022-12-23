@@ -75,12 +75,19 @@ void restore_current_context(void)
 
         // restore PC -> ELR_EL1
         "ldr     x9, [sp, %1]   \n"
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+        "msr     elr_el2, x9    \n"
+#else
         "msr     elr_el1, x9    \n"
-
+#endif
         // restore SP -> SP_EL0, PSTATE -> SPSR_EL1
         "ldp     x10, x11, [sp, %2]     \n"
         "msr     sp_el0,   x10          \n"
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+        "msr     spsr_el2, x11          \n"
+#else
         "msr     spsr_el1, x11          \n"
+#endif        
 
         "ldp     x0,  x1,  [sp, #16 * 0]         \n"
         "ldp     x2,  x3,  [sp, #16 * 1]         \n"

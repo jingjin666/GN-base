@@ -24,12 +24,61 @@
 #define Op2_shift	5
 #define Op2_mask	0x7
 
-//#define sys_reg(op0, op1, crn, crm, op2) \
-//	(((op0) << Op0_shift) | ((op1) << Op1_shift) | \
-//	 ((crn) << CRn_shift) | ((crm) << CRm_shift) | \
-//	 ((op2) << Op2_shift))
+#define sys_reg(op0, op1, crn, crm, op2) \
+	(((op0) << Op0_shift) | ((op1) << Op1_shift) | \
+	 ((crn) << CRn_shift) | ((crm) << CRm_shift) | \
+	 ((op2) << Op2_shift))
 
-#define sys_reg(op0, op1, crn, crm, op2) S##op0##_##op1##_##crn##_##crm##_##op2
+#define sys_insn	sys_reg
+
+#define sys_reg_Op0(id)	(((id) >> Op0_shift) & Op0_mask)
+#define sys_reg_Op1(id)	(((id) >> Op1_shift) & Op1_mask)
+#define sys_reg_CRn(id)	(((id) >> CRn_shift) & CRn_mask)
+#define sys_reg_CRm(id)	(((id) >> CRm_shift) & CRm_mask)
+#define sys_reg_Op2(id)	(((id) >> Op2_shift) & Op2_mask)
+
+#define __stringify_1(x...)	#x
+#define __stringify(x...)	__stringify_1(x)
+
+#ifdef __ASSEMBLY__
+// The space separator is omitted so that __emit_inst(x) can be parsed as
+// either an assembler directive or an assembler macro argument.
+#define __emit_inst(x)			.inst(x)
+#else
+#define __emit_inst(x)			".inst " __stringify((x)) "\n\t"
+#endif
+
+/*
+ * Instructions for modifying PSTATE fields.
+ * As per Arm ARM for v8-A, Section "C.5.1.3 op0 == 0b00, architectural hints,
+ * barriers and CLREX, and PSTATE access", ARM DDI 0487 C.a, system instructions
+ * for accessing PSTATE fields have the following encoding:
+ *	Op0 = 0, CRn = 4
+ *	Op1, Op2 encodes the PSTATE field modified and defines the constraints.
+ *	CRm = Imm4 for the instruction.
+ *	Rt = 0x1f
+ */
+#define pstate_field(op1, op2)		((op1) << Op1_shift | (op2) << Op2_shift)
+#define PSTATE_Imm_shift		CRm_shift
+
+#define PSTATE_PAN			pstate_field(0, 4)
+#define PSTATE_UAO			pstate_field(0, 3)
+#define PSTATE_SSBS			pstate_field(3, 1)
+#define PSTATE_TCO			pstate_field(3, 4)
+
+#define SET_PSTATE_PAN(x)		__emit_inst(0xd500401f | PSTATE_PAN | ((!!x) << PSTATE_Imm_shift))
+#define SET_PSTATE_UAO(x)		__emit_inst(0xd500401f | PSTATE_UAO | ((!!x) << PSTATE_Imm_shift))
+#define SET_PSTATE_SSBS(x)		__emit_inst(0xd500401f | PSTATE_SSBS | ((!!x) << PSTATE_Imm_shift))
+#define SET_PSTATE_TCO(x)		__emit_inst(0xd500401f | PSTATE_TCO | ((!!x) << PSTATE_Imm_shift))
+
+#define __SYS_BARRIER_INSN(CRm, op2, Rt) \
+	__emit_inst(0xd5000000 | sys_insn(0, 3, 3, (CRm), (op2)) | ((Rt) & 0x1f))
+
+#define SB_BARRIER_INSN			__SYS_BARRIER_INSN(0, 7, 31)
+
+#define SYS_DC_ISW			sys_insn(1, 0, 7, 6, 2)
+#define SYS_DC_CSW			sys_insn(1, 0, 7, 10, 2)
+#define SYS_DC_CISW			sys_insn(1, 0, 7, 14, 2)
 
 /*
  * System registers, organised loosely by encoding but grouped together
@@ -51,7 +100,7 @@
 #define SYS_DBGPRCR_EL1			sys_reg(2, 0, 1, 4, 4)
 #define SYS_DBGCLAIMSET_EL1		sys_reg(2, 0, 7, 8, 6)
 #define SYS_DBGCLAIMCLR_EL1		sys_reg(2, 0, 7, 9, 6)
-#define SYS_DBGAUTHSTATUS_EL1		sys_reg(2, 0, 7, 14, 6)
+#define SYS_DBGAUTHSTATUS_EL1   sys_reg(2, 0, 7, 14, 6)
 #define SYS_MDCCSR_EL0			sys_reg(2, 3, 0, 1, 0)
 #define SYS_DBGDTR_EL0			sys_reg(2, 3, 0, 4, 0)
 #define SYS_DBGDTRRX_EL0		sys_reg(2, 3, 0, 5, 0)
@@ -97,22 +146,22 @@
 #define SYS_ID_AA64AFR0_EL1		sys_reg(3, 0, 0, 5, 4)
 #define SYS_ID_AA64AFR1_EL1		sys_reg(3, 0, 0, 5, 5)
 
-#define SYS_ID_AA64ISAR0_EL1		sys_reg(3, 0, 0, 6, 0)
-#define SYS_ID_AA64ISAR1_EL1		sys_reg(3, 0, 0, 6, 1)
+#define SYS_ID_AA64ISAR0_EL1	sys_reg(3, 0, 0, 6, 0)
+#define SYS_ID_AA64ISAR1_EL1	sys_reg(3, 0, 0, 6, 1)
 
-#define SYS_ID_AA64MMFR0_EL1		sys_reg(3, 0, 0, 7, 0)
-#define SYS_ID_AA64MMFR1_EL1		sys_reg(3, 0, 0, 7, 1)
-#define SYS_ID_AA64MMFR2_EL1		sys_reg(3, 0, 0, 7, 2)
+#define SYS_ID_AA64MMFR0_EL1	sys_reg(3, 0, 0, 7, 0)
+#define SYS_ID_AA64MMFR1_EL1	sys_reg(3, 0, 0, 7, 1)
+#define SYS_ID_AA64MMFR2_EL1	sys_reg(3, 0, 0, 7, 2)
 
 #define SYS_SCTLR_EL1			sys_reg(3, 0, 1, 0, 0)
 #define SYS_ACTLR_EL1			sys_reg(3, 0, 1, 0, 1)
 #define SYS_CPACR_EL1			sys_reg(3, 0, 1, 0, 2)
 
-#define SYS_ZCR_EL1			sys_reg(3, 0, 1, 2, 0)
+#define SYS_ZCR_EL1			    sys_reg(3, 0, 1, 2, 0)
 
 #define SYS_TTBR0_EL1			sys_reg(3, 0, 2, 0, 0)
 #define SYS_TTBR1_EL1			sys_reg(3, 0, 2, 0, 1)
-#define SYS_TCR_EL1			sys_reg(3, 0, 2, 0, 2)
+#define SYS_TCR_EL1			    sys_reg(3, 0, 2, 0, 2)
 
 #define SYS_APIAKEYLO_EL1		sys_reg(3, 0, 2, 1, 0)
 #define SYS_APIAKEYHI_EL1		sys_reg(3, 0, 2, 1, 1)
@@ -128,13 +177,13 @@
 #define SYS_APGAKEYHI_EL1		sys_reg(3, 0, 2, 3, 1)
 
 #define SYS_SPSR_EL1			sys_reg(3, 0, 4, 0, 0)
-#define SYS_ELR_EL1			sys_reg(3, 0, 4, 0, 1)
+#define SYS_ELR_EL1			    sys_reg(3, 0, 4, 0, 1)
 
 #define SYS_ICC_PMR_EL1			sys_reg(3, 0, 4, 6, 0)
 
 #define SYS_AFSR0_EL1			sys_reg(3, 0, 5, 1, 0)
 #define SYS_AFSR1_EL1			sys_reg(3, 0, 5, 1, 1)
-#define SYS_ESR_EL1			sys_reg(3, 0, 5, 2, 0)
+#define SYS_ESR_EL1			    sys_reg(3, 0, 5, 2, 0)
 
 #define SYS_ERRIDR_EL1			sys_reg(3, 0, 5, 3, 0)
 #define SYS_ERRSELR_EL1			sys_reg(3, 0, 5, 3, 1)
@@ -145,8 +194,8 @@
 #define SYS_ERXMISC0_EL1		sys_reg(3, 0, 5, 5, 0)
 #define SYS_ERXMISC1_EL1		sys_reg(3, 0, 5, 5, 1)
 
-#define SYS_FAR_EL1			sys_reg(3, 0, 6, 0, 0)
-#define SYS_PAR_EL1			sys_reg(3, 0, 7, 4, 0)
+#define SYS_FAR_EL1			    sys_reg(3, 0, 6, 0, 0)
+#define SYS_PAR_EL1			    sys_reg(3, 0, 7, 4, 0)
 
 #define SYS_PAR_EL1_F			BIT(0)
 #define SYS_PAR_EL1_FST			GENMASK(6, 1)
@@ -357,14 +406,14 @@
 #define SYS_AMEVCNTR0_INST_RET_EL0	SYS_AMEVCNTR0_EL0(2)
 #define SYS_AMEVCNTR0_MEM_STALL		SYS_AMEVCNTR0_EL0(3)
 
-#define SYS_CNTFRQ_EL0			sys_reg(3, 3, 14, 0, 0)
+#define SYS_CNTFRQ_EL0			    sys_reg(3, 3, 14, 0, 0)
 
-#define SYS_CNTP_TVAL_EL0		sys_reg(3, 3, 14, 2, 0)
-#define SYS_CNTP_CTL_EL0		sys_reg(3, 3, 14, 2, 1)
-#define SYS_CNTP_CVAL_EL0		sys_reg(3, 3, 14, 2, 2)
+#define SYS_CNTP_TVAL_EL0		    sys_reg(3, 3, 14, 2, 0)
+#define SYS_CNTP_CTL_EL0		    sys_reg(3, 3, 14, 2, 1)
+#define SYS_CNTP_CVAL_EL0		    sys_reg(3, 3, 14, 2, 2)
 
-#define SYS_CNTV_CTL_EL0		sys_reg(3, 3, 14, 3, 1)
-#define SYS_CNTV_CVAL_EL0		sys_reg(3, 3, 14, 3, 2)
+#define SYS_CNTV_CTL_EL0		    sys_reg(3, 3, 14, 3, 1)
+#define SYS_CNTV_CVAL_EL0		    sys_reg(3, 3, 14, 3, 2)
 
 #define SYS_AARCH32_CNTP_TVAL		sys_reg(0, 0, 14, 2, 0)
 #define SYS_AARCH32_CNTP_CTL		sys_reg(0, 0, 14, 2, 1)
@@ -376,85 +425,87 @@
 #define __TYPER_CRm(n)			(0xc | (((n) >> 3) & 0x3))
 #define SYS_PMEVTYPERn_EL0(n)		sys_reg(3, 3, 14, __TYPER_CRm(n), __PMEV_op2(n))
 
-#define SYS_PMCCFILTR_EL0		sys_reg(3, 3, 14, 15, 7)
+#define SYS_PMCCFILTR_EL0		    sys_reg(3, 3, 14, 15, 7)
 
-#define SYS_ZCR_EL2			sys_reg(3, 4, 1, 2, 0)
-#define SYS_DACR32_EL2			sys_reg(3, 4, 3, 0, 0)
-#define SYS_SPSR_EL2			sys_reg(3, 4, 4, 0, 0)
-#define SYS_ELR_EL2			sys_reg(3, 4, 4, 0, 1)
-#define SYS_IFSR32_EL2			sys_reg(3, 4, 5, 0, 1)
-#define SYS_ESR_EL2			sys_reg(3, 4, 5, 2, 0)
-#define SYS_VSESR_EL2			sys_reg(3, 4, 5, 2, 3)
-#define SYS_FPEXC32_EL2			sys_reg(3, 4, 5, 3, 0)
-#define SYS_FAR_EL2			sys_reg(3, 4, 6, 0, 0)
+#define SYS_ZCR_EL2			        sys_reg(3, 4, 1, 2, 0)
+#define SYS_DACR32_EL2			    sys_reg(3, 4, 3, 0, 0)
+#define SYS_SPSR_EL2			    sys_reg(3, 4, 4, 0, 0)
+#define SYS_ELR_EL2			        sys_reg(3, 4, 4, 0, 1)
+#define SYS_IFSR32_EL2			    sys_reg(3, 4, 5, 0, 1)
+#define SYS_ESR_EL2			        sys_reg(3, 4, 5, 2, 0)
+#define SYS_VSESR_EL2			    sys_reg(3, 4, 5, 2, 3)
+#define SYS_FPEXC32_EL2			    sys_reg(3, 4, 5, 3, 0)
+#define SYS_FAR_EL2			        sys_reg(3, 4, 6, 0, 0)
 
-#define SYS_VDISR_EL2			sys_reg(3, 4, 12, 1,  1)
-#define __SYS__AP0Rx_EL2(x)		sys_reg(3, 4, 12, 8, x)
-#define SYS_ICH_AP0R0_EL2		__SYS__AP0Rx_EL2(0)
-#define SYS_ICH_AP0R1_EL2		__SYS__AP0Rx_EL2(1)
-#define SYS_ICH_AP0R2_EL2		__SYS__AP0Rx_EL2(2)
-#define SYS_ICH_AP0R3_EL2		__SYS__AP0Rx_EL2(3)
+#define SYS_MAIR_EL2                sys_reg(3, 4, 10, 2, 0)
 
-#define __SYS__AP1Rx_EL2(x)		sys_reg(3, 4, 12, 9, x)
-#define SYS_ICH_AP1R0_EL2		__SYS__AP1Rx_EL2(0)
-#define SYS_ICH_AP1R1_EL2		__SYS__AP1Rx_EL2(1)
-#define SYS_ICH_AP1R2_EL2		__SYS__AP1Rx_EL2(2)
-#define SYS_ICH_AP1R3_EL2		__SYS__AP1Rx_EL2(3)
+#define SYS_VDISR_EL2			    sys_reg(3, 4, 12, 1,  1)
+#define __SYS__AP0Rx_EL2(x)		    sys_reg(3, 4, 12, 8, x)
+#define SYS_ICH_AP0R0_EL2		    __SYS__AP0Rx_EL2(0)
+#define SYS_ICH_AP0R1_EL2		    __SYS__AP0Rx_EL2(1)
+#define SYS_ICH_AP0R2_EL2		    __SYS__AP0Rx_EL2(2)
+#define SYS_ICH_AP0R3_EL2		    __SYS__AP0Rx_EL2(3)
 
-#define SYS_ICH_VSEIR_EL2		sys_reg(3, 4, 12, 9, 4)
-#define SYS_ICC_SRE_EL2			sys_reg(3, 4, 12, 9, 5)
-#define SYS_ICH_HCR_EL2			sys_reg(3, 4, 12, 11, 0)
-#define SYS_ICH_VTR_EL2			sys_reg(3, 4, 12, 11, 1)
-#define SYS_ICH_MISR_EL2		sys_reg(3, 4, 12, 11, 2)
-#define SYS_ICH_EISR_EL2		sys_reg(3, 4, 12, 11, 3)
-#define SYS_ICH_ELRSR_EL2		sys_reg(3, 4, 12, 11, 5)
-#define SYS_ICH_VMCR_EL2		sys_reg(3, 4, 12, 11, 7)
+#define __SYS__AP1Rx_EL2(x)		    sys_reg(3, 4, 12, 9, x)
+#define SYS_ICH_AP1R0_EL2		    __SYS__AP1Rx_EL2(0)
+#define SYS_ICH_AP1R1_EL2		    __SYS__AP1Rx_EL2(1)
+#define SYS_ICH_AP1R2_EL2		    __SYS__AP1Rx_EL2(2)
+#define SYS_ICH_AP1R3_EL2		    __SYS__AP1Rx_EL2(3)
 
-#define __SYS__LR0_EL2(x)		sys_reg(3, 4, 12, 12, x)
-#define SYS_ICH_LR0_EL2			__SYS__LR0_EL2(0)
-#define SYS_ICH_LR1_EL2			__SYS__LR0_EL2(1)
-#define SYS_ICH_LR2_EL2			__SYS__LR0_EL2(2)
-#define SYS_ICH_LR3_EL2			__SYS__LR0_EL2(3)
-#define SYS_ICH_LR4_EL2			__SYS__LR0_EL2(4)
-#define SYS_ICH_LR5_EL2			__SYS__LR0_EL2(5)
-#define SYS_ICH_LR6_EL2			__SYS__LR0_EL2(6)
-#define SYS_ICH_LR7_EL2			__SYS__LR0_EL2(7)
+#define SYS_ICH_VSEIR_EL2		    sys_reg(3, 4, 12, 9, 4)
+#define SYS_ICC_SRE_EL2			    sys_reg(3, 4, 12, 9, 5)
+#define SYS_ICH_HCR_EL2			    sys_reg(3, 4, 12, 11, 0)
+#define SYS_ICH_VTR_EL2			    sys_reg(3, 4, 12, 11, 1)
+#define SYS_ICH_MISR_EL2		    sys_reg(3, 4, 12, 11, 2)
+#define SYS_ICH_EISR_EL2		    sys_reg(3, 4, 12, 11, 3)
+#define SYS_ICH_ELRSR_EL2		    sys_reg(3, 4, 12, 11, 5)
+#define SYS_ICH_VMCR_EL2		    sys_reg(3, 4, 12, 11, 7)
 
-#define __SYS__LR8_EL2(x)		sys_reg(3, 4, 12, 13, x)
-#define SYS_ICH_LR8_EL2			__SYS__LR8_EL2(0)
-#define SYS_ICH_LR9_EL2			__SYS__LR8_EL2(1)
-#define SYS_ICH_LR10_EL2		__SYS__LR8_EL2(2)
-#define SYS_ICH_LR11_EL2		__SYS__LR8_EL2(3)
-#define SYS_ICH_LR12_EL2		__SYS__LR8_EL2(4)
-#define SYS_ICH_LR13_EL2		__SYS__LR8_EL2(5)
-#define SYS_ICH_LR14_EL2		__SYS__LR8_EL2(6)
-#define SYS_ICH_LR15_EL2		__SYS__LR8_EL2(7)
+#define __SYS__LR0_EL2(x)		    sys_reg(3, 4, 12, 12, x)
+#define SYS_ICH_LR0_EL2			    __SYS__LR0_EL2(0)
+#define SYS_ICH_LR1_EL2			    __SYS__LR0_EL2(1)
+#define SYS_ICH_LR2_EL2			    __SYS__LR0_EL2(2)
+#define SYS_ICH_LR3_EL2			    __SYS__LR0_EL2(3)
+#define SYS_ICH_LR4_EL2			    __SYS__LR0_EL2(4)
+#define SYS_ICH_LR5_EL2			    __SYS__LR0_EL2(5)
+#define SYS_ICH_LR6_EL2			    __SYS__LR0_EL2(6)
+#define SYS_ICH_LR7_EL2			    __SYS__LR0_EL2(7)
+
+#define __SYS__LR8_EL2(x)		    sys_reg(3, 4, 12, 13, x)
+#define SYS_ICH_LR8_EL2			    __SYS__LR8_EL2(0)
+#define SYS_ICH_LR9_EL2			    __SYS__LR8_EL2(1)
+#define SYS_ICH_LR10_EL2		    __SYS__LR8_EL2(2)
+#define SYS_ICH_LR11_EL2		    __SYS__LR8_EL2(3)
+#define SYS_ICH_LR12_EL2		    __SYS__LR8_EL2(4)
+#define SYS_ICH_LR13_EL2		    __SYS__LR8_EL2(5)
+#define SYS_ICH_LR14_EL2		    __SYS__LR8_EL2(6)
+#define SYS_ICH_LR15_EL2		    __SYS__LR8_EL2(7)
 
 /* VHE encodings for architectural EL0/1 system registers */
-#define SYS_SCTLR_EL12			sys_reg(3, 5, 1, 0, 0)
-#define SYS_CPACR_EL12			sys_reg(3, 5, 1, 0, 2)
-#define SYS_ZCR_EL12			sys_reg(3, 5, 1, 2, 0)
-#define SYS_TTBR0_EL12			sys_reg(3, 5, 2, 0, 0)
-#define SYS_TTBR1_EL12			sys_reg(3, 5, 2, 0, 1)
-#define SYS_TCR_EL12			sys_reg(3, 5, 2, 0, 2)
-#define SYS_SPSR_EL12			sys_reg(3, 5, 4, 0, 0)
-#define SYS_ELR_EL12			sys_reg(3, 5, 4, 0, 1)
-#define SYS_AFSR0_EL12			sys_reg(3, 5, 5, 1, 0)
-#define SYS_AFSR1_EL12			sys_reg(3, 5, 5, 1, 1)
-#define SYS_ESR_EL12			sys_reg(3, 5, 5, 2, 0)
-#define SYS_FAR_EL12			sys_reg(3, 5, 6, 0, 0)
-#define SYS_MAIR_EL12			sys_reg(3, 5, 10, 2, 0)
-#define SYS_AMAIR_EL12			sys_reg(3, 5, 10, 3, 0)
-#define SYS_VBAR_EL12			sys_reg(3, 5, 12, 0, 0)
-#define SYS_CONTEXTIDR_EL12		sys_reg(3, 5, 13, 0, 1)
-#define SYS_CNTKCTL_EL12		sys_reg(3, 5, 14, 1, 0)
-#define SYS_CNTP_TVAL_EL02		sys_reg(3, 5, 14, 2, 0)
-#define SYS_CNTP_CTL_EL02		sys_reg(3, 5, 14, 2, 1)
-#define SYS_CNTP_CVAL_EL02		sys_reg(3, 5, 14, 2, 2)
-#define SYS_CNTV_TVAL_EL02		sys_reg(3, 5, 14, 3, 0)
-#define SYS_CNTV_CTL_EL02		sys_reg(3, 5, 14, 3, 1)
-#define SYS_CNTV_CVAL_EL02		sys_reg(3, 5, 14, 3, 2)
-#if 0
+#define SYS_SCTLR_EL12			    sys_reg(3, 5, 1, 0, 0)
+#define SYS_CPACR_EL12			    sys_reg(3, 5, 1, 0, 2)
+#define SYS_ZCR_EL12			    sys_reg(3, 5, 1, 2, 0)
+#define SYS_TTBR0_EL12			    sys_reg(3, 5, 2, 0, 0)
+#define SYS_TTBR1_EL12			    sys_reg(3, 5, 2, 0, 1)
+#define SYS_TCR_EL12			    sys_reg(3, 5, 2, 0, 2)
+#define SYS_SPSR_EL12			    sys_reg(3, 5, 4, 0, 0)
+#define SYS_ELR_EL12			    sys_reg(3, 5, 4, 0, 1)
+#define SYS_AFSR0_EL12			    sys_reg(3, 5, 5, 1, 0)
+#define SYS_AFSR1_EL12			    sys_reg(3, 5, 5, 1, 1)
+#define SYS_ESR_EL12			    sys_reg(3, 5, 5, 2, 0)
+#define SYS_FAR_EL12			    sys_reg(3, 5, 6, 0, 0)
+#define SYS_MAIR_EL12			    sys_reg(3, 5, 10, 2, 0)
+#define SYS_AMAIR_EL12			    sys_reg(3, 5, 10, 3, 0)
+#define SYS_VBAR_EL12			    sys_reg(3, 5, 12, 0, 0)
+#define SYS_CONTEXTIDR_EL12		    sys_reg(3, 5, 13, 0, 1)
+#define SYS_CNTKCTL_EL12		    sys_reg(3, 5, 14, 1, 0)
+#define SYS_CNTP_TVAL_EL02		    sys_reg(3, 5, 14, 2, 0)
+#define SYS_CNTP_CTL_EL02		    sys_reg(3, 5, 14, 2, 1)
+#define SYS_CNTP_CVAL_EL02		    sys_reg(3, 5, 14, 2, 2)
+#define SYS_CNTV_TVAL_EL02		    sys_reg(3, 5, 14, 3, 0)
+#define SYS_CNTV_CTL_EL02		    sys_reg(3, 5, 14, 3, 1)
+#define SYS_CNTV_CVAL_EL02		    sys_reg(3, 5, 14, 3, 2)
+
 /* Common SCTLR_ELx flags. */
 #define SCTLR_ELx_DSSBS	(BIT(44))
 #define SCTLR_ELx_ENIA	(BIT(31))
@@ -514,7 +565,7 @@
 			 SCTLR_EL1_DZE  | SCTLR_EL1_UCT                   |\
 			 SCTLR_EL1_NTWE | SCTLR_ELx_IESB | SCTLR_EL1_SPAN |\
 			 ENDIAN_SET_EL1 | SCTLR_EL1_UCI  | SCTLR_EL1_RES1)
-#endif
+
 /* MAIR_ELx memory attributes (used by Linux) */
 #define MAIR_ATTR_DEVICE_nGnRnE		UL(0x00)
 #define MAIR_ATTR_DEVICE_nGnRE		UL(0x04)
@@ -833,5 +884,159 @@
 #define DCZID_DZP_SHIFT			4
 #define DCZID_BS_SHIFT			0
 
+/*
+ * The ZCR_ELx_LEN_* definitions intentionally include bits [8:4] which
+ * are reserved by the SVE architecture for future expansion of the LEN
+ * field, with compatible semantics.
+ */
+#define ZCR_ELx_LEN_SHIFT	0
+#define ZCR_ELx_LEN_SIZE	9
+#define ZCR_ELx_LEN_MASK	0x1ff
+
+#define CPACR_EL1_ZEN_EL1EN	(BIT(16)) /* enable EL1 access */
+#define CPACR_EL1_ZEN_EL0EN	(BIT(17)) /* enable EL0 access, if EL1EN set */
+#define CPACR_EL1_ZEN		(CPACR_EL1_ZEN_EL1EN | CPACR_EL1_ZEN_EL0EN)
+
+/* TCR EL1 Bit Definitions */
+#define SYS_TCR_EL1_TCMA1	(BIT(58))
+#define SYS_TCR_EL1_TCMA0	(BIT(57))
+
+/* GCR_EL1 Definitions */
+#define SYS_GCR_EL1_RRND	(BIT(16))
+#define SYS_GCR_EL1_EXCL_MASK	0xffffUL
+
+/* RGSR_EL1 Definitions */
+#define SYS_RGSR_EL1_TAG_MASK	0xfUL
+#define SYS_RGSR_EL1_SEED_SHIFT	8
+#define SYS_RGSR_EL1_SEED_MASK	0xffffUL
+
+/* GMID_EL1 field definitions */
+#define SYS_GMID_EL1_BS_SHIFT	0
+#define SYS_GMID_EL1_BS_SIZE	4
+
+/* TFSR{,E0}_EL1 bit definitions */
+#define SYS_TFSR_EL1_TF0_SHIFT	0
+#define SYS_TFSR_EL1_TF1_SHIFT	1
+#define SYS_TFSR_EL1_TF0	(UL(1) << SYS_TFSR_EL1_TF0_SHIFT)
+#define SYS_TFSR_EL1_TF1	(UL(1) << SYS_TFSR_EL1_TF1_SHIFT)
+
+/* Safe value for MPIDR_EL1: Bit31:RES1, Bit30:U:0, Bit24:MT:0 */
+#define SYS_MPIDR_SAFE_VAL	(BIT(31))
+
+#ifdef __ASSEMBLY__
+
+.irp	num,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30
+.equ	.L__reg_num_x\num, \num
+.endr
+.equ	.L__reg_num_xzr, 31
+
+.macro	mrs_s, rt, sreg
+ __emit_inst(0xd5200000|(\sreg)|(.L__reg_num_\rt))
+.endm
+
+.macro	msr_s, sreg, rt
+__emit_inst(0xd5000000|(\sreg)|(.L__reg_num_\rt))
+.endm
+
+#else
+
+#include <types.h>
+
+#define __DEFINE_MRS_MSR_S_REGNUM				\
+"	.irp	num,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30\n" \
+"	.equ	.L__reg_num_x\\num, \\num\n"			\
+"	.endr\n"						\
+"	.equ	.L__reg_num_xzr, 31\n"
+
+#define DEFINE_MRS_S						\
+	__DEFINE_MRS_MSR_S_REGNUM				\
+"	.macro	mrs_s, rt, sreg\n"				\
+	__emit_inst(0xd5200000|(\\sreg)|(.L__reg_num_\\rt))	\
+"	.endm\n"
+
+#define DEFINE_MSR_S						\
+	__DEFINE_MRS_MSR_S_REGNUM				\
+"	.macro	msr_s, sreg, rt\n"				\
+	__emit_inst(0xd5000000|(\\sreg)|(.L__reg_num_\\rt))	\
+"	.endm\n"
+
+#define UNDEFINE_MRS_S						\
+"	.purgem	mrs_s\n"
+
+#define UNDEFINE_MSR_S						\
+"	.purgem	msr_s\n"
+
+#define __mrs_s(v, r)						\
+	DEFINE_MRS_S						\
+"	mrs_s " v ", " __stringify(r) "\n"			\
+	UNDEFINE_MRS_S
+
+#define __msr_s(r, v)						\
+	DEFINE_MSR_S						\
+"	msr_s " __stringify(r) ", " v "\n"			\
+	UNDEFINE_MSR_S
+
+/*
+ * Unlike read_cpuid, calls to read_sysreg are never expected to be
+ * optimized away or replaced with synthetic values.
+ */
+#define read_sysreg(r) ({					\
+	u64 __val;						\
+	asm volatile("mrs %0, " __stringify(r) : "=r" (__val));	\
+	__val;							\
+})
+
+/*
+ * The "Z" constraint normally means a zero immediate, but when combined with
+ * the "%x0" template means XZR.
+ */
+#define write_sysreg(v, r) do {					\
+	u64 __val = (u64)(v);					\
+	asm volatile("msr " __stringify(r) ", %x0"		\
+		     : : "rZ" (__val));				\
+} while (0)
+
+/*
+ * For registers without architectural names, or simply unsupported by
+ * GAS.
+ */
+#define read_sysreg_s(r) ({						\
+	u64 __val;							\
+	asm volatile(__mrs_s("%0", r) : "=r" (__val));			\
+	__val;								\
+})
+
+#define write_sysreg_s(v, r) do {					\
+	u64 __val = (u64)(v);						\
+	asm volatile(__msr_s(r, "%x0") : : "rZ" (__val));		\
+} while (0)
+
+/*
+ * Modify bits in a sysreg. Bits in the clear mask are zeroed, then bits in the
+ * set mask are set. Other bits are left as-is.
+ */
+#define sysreg_clear_set(sysreg, clear, set) do {			\
+	u64 __scs_val = read_sysreg(sysreg);				\
+	u64 __scs_new = (__scs_val & ~(u64)(clear)) | (set);		\
+	if (__scs_new != __scs_val)					\
+		write_sysreg(__scs_new, sysreg);			\
+} while (0)
+
+#define sysreg_clear_set_s(sysreg, clear, set) do {			\
+	u64 __scs_val = read_sysreg_s(sysreg);				\
+	u64 __scs_new = (__scs_val & ~(u64)(clear)) | (set);		\
+	if (__scs_new != __scs_val)					\
+		write_sysreg_s(__scs_new, sysreg);			\
+} while (0)
+
+#define read_sysreg_par() ({						\
+	u64 par;							\
+	asm(ALTERNATIVE("nop", "dmb sy", ARM64_WORKAROUND_1508412));	\
+	par = read_sysreg(par_el1);					\
+	asm(ALTERNATIVE("nop", "dmb sy", ARM64_WORKAROUND_1508412));	\
+	par;								\
+})
+
+#endif
 
 #endif /* __ASM_SYSREG_H */

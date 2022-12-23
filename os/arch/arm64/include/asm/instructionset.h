@@ -1,9 +1,9 @@
 #ifndef __ASM_INSTRUCTIONSET_H
 #define __ASM_INSTRUCTIONSET_H
 
-#include <k_types.h>
-
 #ifndef __ASSEMBLY__
+
+#include <k_types.h>
 
 #define sev()       asm volatile("sev" : : : "memory")
 #define wfe()       asm volatile("wfe" : : : "memory")

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
-
+#if 1
 int data = 0x1234;
 int bss;
 int main(int argc, char *argv[])
@@ -54,6 +54,8 @@ int main(int argc, char *argv[])
     while(1)
     {
         printf("main data = %p, bss = %p\n", data++, bss--);
-        sleep(1);
+        asm volatile("wfi" : : : "memory");
+        //sleep(1);
     }
 }
+#endif

@@ -2,6 +2,7 @@
 #define __ASM_PAGE_DEF_H
 
 #include <chinos/config.h>
+
 #include <const.h>
 
 /* PAGE_SHIFT determines the page size */

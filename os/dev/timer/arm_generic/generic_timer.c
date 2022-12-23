@@ -30,7 +30,7 @@ void generic_timer_init(timer_t *timer)
 
 #ifdef TIMER_DEADLINE
     uint64_t c_val;
-    MRS(CNT_VCT, c_val);
+    MRS(CNT_CT, c_val);
     kprintf("c_val = %ld\n", c_val);
     MSR(CNT_CVAL, c_val + TIMER_RELOAD);
 #else
@@ -39,11 +39,16 @@ void generic_timer_init(timer_t *timer)
     MRS(CNT_TVAL, cnt_tval);
     kprintf("cnt_tval = %ld\n", cnt_tval);
 #endif
+
     uint32_t cnt_ctl;
     MSR(CNT_CTL, 1);
     MRS(CNT_CTL, cnt_ctl);
     kprintf("cnt_ctl = %p\n", cnt_ctl);
 
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    timer->irq = default_generic_timer_desc.ns_el2_irq_phys;
+#else
     timer->irq = default_generic_timer_desc.el1_irq_virt;
+#endif
     timer->clock_freq = timer_cntfrq;
 }

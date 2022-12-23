@@ -1,5 +1,5 @@
-#ifndef __ARMV8A_TLB_H
-#define __ARMV8A_TLB_H
+#ifndef __ASM_TLB_H
+#define __ASM_TLB_H
 
 #include <chinos/config.h>
 
@@ -64,4 +64,4 @@ static inline void flush_TLB_IPA(unsigned long ipa)
 
 void lockTLBEntry(unsigned long vaddr);
 
-#endif /* __ARMV8A_TLB_H */
+#endif /* __ASM_TLB_H */

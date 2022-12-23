@@ -1,5 +1,28 @@
 #include <chinos/config.h>
-#include <system.h>
+#include <sysreg.h>
+
+/*
+ * SPSR_EL3/SPSR_EL2 bits definitions
+ */
+#define SPSR_EL_END_LE		(0 << 9)  /* Exception Little-endian          */
+#define SPSR_EL_DEBUG_MASK	(1 << 9)  /* Debug exception masked           */
+#define SPSR_EL_ASYN_MASK	(1 << 8)  /* Asynchronous data abort masked   */
+#define SPSR_EL_SERR_MASK	(1 << 8)  /* System Error exception masked    */
+#define SPSR_EL_IRQ_MASK	(1 << 7)  /* IRQ exception masked             */
+#define SPSR_EL_FIQ_MASK	(1 << 6)  /* FIQ exception masked             */
+#define SPSR_EL_T_A32		(0 << 5)  /* AArch32 instruction set A32      */
+#define SPSR_EL_M_AARCH64	(0 << 4)  /* Exception taken from AArch64     */
+#define SPSR_EL_M_AARCH32	(1 << 4)  /* Exception taken from AArch32     */
+#define SPSR_EL_M_SVC		(0x3)     /* Exception taken from SVC mode    */
+#define SPSR_EL_M_HYP		(0xa)     /* Exception taken from HYP mode    */
+#define SPSR_EL_M_EL1H		(5)       /* Exception taken from EL1h mode   */
+#define SPSR_EL_M_EL2H		(9)       /* Exception taken from EL2h mode   */
+
+/*
+ * HCR_EL2 bits definitions
+ */
+#define HCR_EL2_RW_AARCH64	(1 << 31) /* EL1 is AArch64                   */
+#define HCR_EL2_HCD_DIS		(1 << 29) /* Hypervisor Call disabled         */
 
 // 重新命名x16寄存器为临时寄存器
 tmp     .req    x16
@@ -49,7 +72,7 @@ switch_to_el1_from_el2:
     bic     tmp, tmp, #SCTLR_ELx_C
     bic     tmp, tmp, #SCTLR_ELx_M
     msr     sctlr_el2, tmp
-
+#ifndef CONFIG_HYPERVISOR_SUPPORT
     // 从EL2切换到EL1
     /* Initialize HCR_EL2 */
 	ldr	    tmp, =(HCR_EL2_RW_AARCH64 | HCR_EL2_HCD_DIS)
@@ -63,7 +86,7 @@ switch_to_el1_from_el2:
 	adr     tmp, el1_entry
 	msr	    elr_el2, tmp
 	eret
-
+#endif
 el1_entry:
     // 关闭EL1的指令和数据缓存和MMU
     mrs     tmp, sctlr_el1
@@ -89,9 +112,19 @@ cache_disable_done:
     bl      boot_setup_mmu
 
     // 打开MMU
+#ifndef CONFIG_HYPERVISOR_SUPPORT
     mrs     tmp, sctlr_el1
+    orr     tmp, tmp, #SCTLR_ELx_I
+    orr     tmp, tmp, #SCTLR_ELx_C
     orr     tmp, tmp, #SCTLR_ELx_M
     msr     sctlr_el1, tmp
+#else
+    mrs     tmp, sctlr_el2
+    orr     tmp, tmp, #SCTLR_ELx_I
+    orr     tmp, tmp, #SCTLR_ELx_C
+    orr     tmp, tmp, #SCTLR_ELx_M
+    msr     sctlr_el2, tmp
+#endif
 
     // 设置MMU后设置C堆栈,注意此刻SP为虚拟地址
     ldr     x0, = idle_stack

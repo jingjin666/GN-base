@@ -2,18 +2,20 @@ module_name = get_path_info(rebase_path("."), "name")
 
 source_set(module_name) {
     sources = [
-        "entry.S",
-        "setup.c",
-        "fpu.c",
-        "halt.c",
-        "pagetable.c",
-        "idle.c",
-        "cpu.c",
-        "vector.S",
-        "cache.c",
-        "traps.c",
-        "context.c",
-        "fault.c",
+        "boot/entry.S",
+        "boot/setup.c",
+        "mm/mmu.c",
+        "mm/cache.c",
+        "mm/context.c",
+        "mm/fault.c",
+        "mm/pagetable.c",
+        "hyper/mmu-hyper.c",
+        "kernel/cpu.c",
+        "kernel/fpu.c",
+        "kernel/halt.c",
+        "kernel/idle.c",
+        "kernel/traps.c",
+        "kernel/vector.S",
     ]
 
     configs = [
@@ -23,6 +25,5 @@ source_set(module_name) {
 
 config("kernel") {
     include_dirs =  [ "./include" ]
-    include_dirs += [ "./include/armv8-a" ]
     include_dirs += [ "./include/asm" ]
 }

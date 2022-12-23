@@ -3,7 +3,6 @@ module_name = get_path_info(rebase_path("."), "name")
 source_set(module_name) {
     sources = [
         "buddy.c",
-        "addrspace.c",
         "mm_gran.c",
         "mm_graninfo.c",
         "mmap.c",

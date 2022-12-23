@@ -33,8 +33,21 @@ void init_libc(void)
     // todo : tls
 }
 
+#if 0
+#define getreg64(a)           (*(volatile uint64_t *)(a))
+#define putreg64(v,a)         (*(volatile uint64_t *)(a) = (v))
+#define UARTDR      0x000
+#define UARTFR      0x018
+
+#define UARTFR_TXFF (1 << 5)
+#define UARTFR_RXFE (1 << 4)
+int data = 0x1234;
+int bss;
+#endif
+
 void _start(unsigned long *p)
 {
+#if 1
 	int argc = p[0];
 	char **argv = (void *)(p+1);
 
@@ -49,4 +62,16 @@ void _start(unsigned long *p)
         // 2.libc_exit_fini
         // 3.stdio_exit
     exit(ret);
+#else
+    while ((getreg64(0x0000000f00000000UL + UARTFR) & UARTFR_TXFF) != 0);
+    putreg64('w', 0x0000000f00000000UL + UARTDR);
+    int argc = p[0];
+    argc++;
+    while(1) {
+        //asm volatile("isb sy" : : : "memory");
+        data++;
+        bss++;
+        asm volatile("wfi" : : : "memory");
+    }
+#endif
 }
