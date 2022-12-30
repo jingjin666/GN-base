@@ -15,6 +15,7 @@
 #include <instructionset.h>
 #include <tlb.h>
 #include <uapi/util.h>
+#include <registerset.h>
 #ifdef CONFIG_HYPERVISOR_SUPPORT
 #include <mmu-hyper.h>
 #else
@@ -217,6 +218,8 @@ void task_switch(struct tcb *from, struct tcb *to)
             flush_TLB();
         }
     }
+
+    task_dbg("switch over\n");
 }
 
 void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as)
@@ -242,3 +245,35 @@ void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t p
 
     task->addrspace = as;
 }
+
+static void *task_calloc(size_t size)
+{
+    void *p = gran_alloc(g_heap, size);
+    k_memset(p, 0, size);
+    task_dbg("task_calloc p = %p\n", p);
+    return p;
+}
+
+void sys_thread_create(unsigned long entry, unsigned long stack)
+{
+    kprintf("sys_thread_create\n");
+    unsigned long *p = (unsigned long *)entry;
+    kprintf("entry %p = %p\n", p, *p);
+
+    struct tcb *task = (struct tcb *)task_calloc(sizeof(struct tcb));
+    struct tcb *current = this_task();
+    struct addrspace *as = current->addrspace;
+
+    task_create(task, \
+                (task_entry)entry, \
+                NULL, \
+                CONFIG_DEFAULT_TASK_PRIORITY, \
+                (void *)stack, CONFIG_DEFAULT_TASK_STACKSIZE, TASK_TYPE_USER, as);
+
+    task_set_tgid(task, current->tgid);
+    
+    context_set_spsr(&task->context, (PMODE_FIRQ | PMODE_EL2h | PMODE_SERROR));
+
+    sched_attach(task);
+}
+

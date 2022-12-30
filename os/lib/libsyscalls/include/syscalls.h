@@ -3,7 +3,7 @@
 
 #include <uapi/vsyscall.h>
 
-#define SYSCALLS_NUM __NR_landlock_restrict_self
+#define SYSCALLS_NUM __NR_last
 
 typedef unsigned long (*sys_callback)(unsigned long *params);
 

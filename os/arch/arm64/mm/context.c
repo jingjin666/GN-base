@@ -52,13 +52,18 @@ void context_set_stack(struct context *ctx, void *stack, u32 size)
     ctx->regs[SP] = (unsigned long)stack + size;
 }
 
+void context_set_spsr(struct context *ctx, unsigned long spsr)
+{
+    ctx->regs[PSTATE] = spsr;
+}
+
 void restore_current_context(void)
 {
     struct tcb *current = this_task();
     assert(current);
 
-#if 0
-    context_t *ctx = &task->context;
+#if 1
+    context_t *ctx = &current->context;
     kprintf("ctx = %p\n", ctx);
     int i = 0;
     while(i < REGS_COUNT)

@@ -75,6 +75,35 @@ static unsigned long vsys_nanosleep(unsigned long *params)
     return sys_nanosleep(p0, p1);
 }
 
+static unsigned long vsys_thread_create(unsigned long *params)
+{
+    unsigned long p0 = *params++;
+    unsigned long p1 = *params++;
+    unsigned long p2 = *params++;
+    unsigned long p3 = *params++;
+    unsigned long p4 = *params++;
+    unsigned long p5 = *params++;
+
+    kprintf("p0 = %p, p1 = %p, p2 = %p, p3 = %p, p4 = %p, p5 = %p\n", p0, p1, p2, p3, p4, p5);
+
+    unsigned long msg_len = p0;
+    unsigned long msg[5];
+
+    if (msg_len > 5*sizeof(long)) {
+        return -1;
+    }
+
+    msg[0] = p1;
+    msg[1] = p2;
+
+    kprintf("msg_len = %p, msg = [%p, %p]\n", msg_len, msg[0], msg[1]);
+
+    unsigned long entry = msg[0];
+    unsigned long stack = msg[1];
+    
+    return sys_thread_create(entry, stack);
+}
+
 sys_callback svc_handlers[SYSCALLS_NUM] = {
     [__NR_ioctl]        = vsys_ioctl,
     [__NR_writev]       = vsys_writev,
@@ -84,4 +113,6 @@ sys_callback svc_handlers[SYSCALLS_NUM] = {
     [__NR_exit]         = vsys_exit,
     [__NR_exit_group]   = vsys_exit_group,
     [__NR_nanosleep]    = vsys_nanosleep,
+    [__NR_thread_create]= vsys_thread_create,
 };
+

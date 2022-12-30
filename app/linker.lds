@@ -40,3 +40,15 @@ SECTIONS
         *(.comment)
     }
 }
+
+SECTIONS
+{
+    . = ALIGN(4096);
+    vm_start = .;
+    .vm :
+    {
+        *(.vm*)
+    }
+    . = ALIGN(4096);
+    vm_end = .;
+}

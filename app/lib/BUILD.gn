@@ -3,19 +3,15 @@ module_name = get_path_info(rebase_path("."), "name")
 group(module_name) {
     deps = []
     deps += [
-        "test",
-        "crt",
-        "vm",
-        "lib",
+        "libarch",
+        "libipc",
     ]
 }
 
 config("service") {
     configs = []
     configs += [
-        "test:service",
-        "crt:service",
-        "vm:service",
-        "lib:service",
+        "libarch:service",
+        "libipc:service",
     ]
 }

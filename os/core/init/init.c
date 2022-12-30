@@ -246,6 +246,11 @@ static void root_task_create(void)
     dev_region.size = 0x1000;
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     hyper_as_map(root_task.addrspace, &dev_region, PROT_READ|PROT_WRITE, RAM_DEVICE);
+
+    dev_region.pbase = UART_PBASE;
+    dev_region.vbase = UART_PBASE;
+    dev_region.size = 0x1000;
+    as_map(&hyper_kernel_addrspace, &dev_region, 0, RAM_DEVICE);
 #else
     as_map(root_task.addrspace, &dev_region, 0, RAM_DEVICE);
 #endif
@@ -258,6 +263,7 @@ static void root_task_create(void)
     stack_region.size  = CONFIG_DEFAULT_TASK_STACKSIZE;
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     hyper_as_map(root_task.addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+    hyper_as_map(&hyper_kernel_addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
 #else
     as_map(root_task.addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
 #endif

@@ -119,4 +119,5 @@ int  task_assign_tid(struct tcb *task);
 void task_init(struct tcb *task, uint8_t type);
 void task_switch(struct tcb *from, struct tcb *to);
 void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as);
+void sys_thread_create(unsigned long entry, unsigned long stack);
 #endif

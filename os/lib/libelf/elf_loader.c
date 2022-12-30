@@ -232,6 +232,7 @@ static void elf_map(struct tcb *task, uintptr_t vaddr, size_t size, uint32_t fla
 
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     hyper_as_map(task->addrspace, &elf_region, prot, RAM_NORMAL);
+    hyper_as_map(&hyper_kernel_addrspace, &elf_region, PROT_READ|PROT_WRITE|PROT_EXEC, RAM_NORMAL);
 #else
     as_map(task->addrspace, &elf_region, prot, RAM_NORMAL);
 #endif

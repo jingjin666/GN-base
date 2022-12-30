@@ -306,6 +306,8 @@
 #define __NR_landlock_create_ruleset	444
 #define __NR_landlock_add_rule	445
 #define __NR_landlock_restrict_self	446
+#define __NR_thread_create  450
+#define __NR_last           500
 
 #define SYS_io_setup 0
 #define SYS_io_destroy 1
@@ -608,5 +610,6 @@
 #define SYS_landlock_create_ruleset	444
 #define SYS_landlock_add_rule	445
 #define SYS_landlock_restrict_self	446
+#define SYS_thread_create   450
 
 #endif
