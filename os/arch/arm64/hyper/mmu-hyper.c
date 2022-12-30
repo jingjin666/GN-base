@@ -133,7 +133,7 @@ void hyper_as_switch(struct addrspace *as, unsigned long type, asid_t asid)
         //kprintf("TTBR1_EL2 = %p\n", ttbr1);
         #endif
     } else if (type == TASK_TYPE_USER) {
-        /* TTBR0 */
+        /* VTTBR_EL2 */
         u64 ttbr0;
         MRS("VTTBR_EL2", ttbr0);
         kprintf("prev:VTTBR_EL2 = %p\n", ttbr0);

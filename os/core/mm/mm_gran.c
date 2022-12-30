@@ -180,7 +180,7 @@ void *gran_alloc(struct mm_gran *gran, size_t size)
     int          gatidx;
     int          bitidx;
     int          shift;
-    int          ret;
+    //int          ret;
 
     assert(gran != NULL && size <= 32 * (1 << gran->log2gran));
 
@@ -395,7 +395,7 @@ void gran_free(struct mm_gran *gran, void *memory, size_t size)
     unsigned int ngranules;
     unsigned int avail;
     uint32_t     gatmask;
-    int          ret;
+    //int          ret;
 
     assert(gran != NULL && memory && size <= 32 * (1 << gran->log2gran));
 

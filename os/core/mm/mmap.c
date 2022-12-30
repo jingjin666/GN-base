@@ -8,6 +8,7 @@
 #include <task.h>
 #include <uapi/errors.h>
 #include <uapi/util.h>
+#include <mmu.h>
 
 #include "mmap.h"
 

@@ -69,7 +69,7 @@ void cpu_init(void)
     kprintf("VTCR_EL2 = 0x%lx\n", vtcr);
     
     vtcr =  (pa_range << VTCR_EL2_PS_SHIFT);    // 40-bit PA size
-    vtcr |= VTCR_EL2_T0SZ(40);                  // 40-bit input IPA
+    vtcr |= VTCR_EL2_T0SZ(VA_BITS);             // 39-bit input IPA
     vtcr |= (1 << VTCR_EL2_SL0_SHIFT);          // 4KiB, start at level 1
     vtcr |= VTCR_EL2_TG0_4K;                    // 4KiB page size
     vtcr |= VTCR_EL2_SH0_INNER;                 // inner shareable

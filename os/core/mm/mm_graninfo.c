@@ -463,7 +463,7 @@ void gran_dump(struct mm_gran *gran, struct graninfo *info)
   unsigned int nbits;
   unsigned int granidx;
   unsigned int gatidx;
-  int ret;
+  //int ret;
 
   assert(gran != NULL && info != NULL);
 

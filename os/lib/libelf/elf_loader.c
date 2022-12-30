@@ -8,6 +8,11 @@
 #include <uapi/errors.h>
 #include <elf.h>
 #include <mmap.h>
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+#include <mmu-hyper.h>
+#else
+#include <mmu.h>
+#endif
 
 #include "elf_loader.h"
 
