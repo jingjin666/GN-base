@@ -8,7 +8,11 @@
 #include <task.h>
 #include <uapi/errors.h>
 #include <uapi/util.h>
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+#include <mmu-hyper.h>
+#else
 #include <mmu.h>
+#endif
 
 #include "mmap.h"
 
@@ -55,7 +59,12 @@ unsigned long sys_brk(unsigned long brk)
         region.pbase = vbase_to_pbase(vaddr);
         region.vbase = mm->brk;
         region.size  = heap_size;
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+        hyper_as_map(current->addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+        as_map(&hyper_kernel_addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+#else
         as_map(current->addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+#endif
         //dump_pgtable_verbose(&current->addrspace->pg_table, 0);
     }
 

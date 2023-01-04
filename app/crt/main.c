@@ -9,6 +9,8 @@
 extern char vm_start[];
 extern char vm_end[];
 
+#define wfi()       asm volatile("wfi" : : : "memory")
+
 #define MRS(reg, v) asm volatile("mrs %x0," reg : "=r"(v))
 #define MSR(reg, v)                                \
     do {                                           \
@@ -16,8 +18,28 @@ extern char vm_end[];
         asm volatile("msr " reg ",%x0" :: "r" (_v));\
     }while(0)
 
+#define getreg64(a)           (*(volatile uint64_t *)(a))
+#define putreg64(v,a)         (*(volatile uint64_t *)(a) = (v))
+#define UARTDR      0x000
+#define UARTFR      0x018
+#define UARTFR_TXFF (1 << 5)
+#define UARTFR_RXFE (1 << 4)
+
 int data = 0x1234;
 int bss;
+
+void hello_thread(void)
+{
+    int i = 0;
+    printf("hello_thread\n");
+
+    while(1)
+    {
+        printf("hello_thread %d\n", i++);
+        sleep(1);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     printf("\n\n---hello world---\n\n");
@@ -28,6 +50,7 @@ int main(int argc, char *argv[])
 
     char test[10];
     memset(test, 0, 10);
+
 
 #if 0
     void *addr;
@@ -66,11 +89,17 @@ int main(int argc, char *argv[])
 
     printf("%p\n", *(unsigned long *)vm_start);
 
+#if 0
+    void *stack = malloc(8192);
+    printf("stack = %p\n", stack);
 
-    thread_create(vm_start, 0);
+    thread_create(hello_thread, stack);
+#else
+    thread_create(vm_start, 0x5000);
+#endif
     while(1)
     {
-        //printf("main data = %p, bss = %p\n", data++, bss--);
+        printf("main data = %p, bss = %p\n", data++, bss--);
         sleep(1);
     }
 }

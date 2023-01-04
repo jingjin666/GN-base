@@ -258,22 +258,42 @@ void sys_thread_create(unsigned long entry, unsigned long stack)
 {
     kprintf("sys_thread_create\n");
     unsigned long *p = (unsigned long *)entry;
-    kprintf("entry %p = %p\n", p, *p);
+    //kprintf("entry %p = %p\n", p, *p);
 
+    //typedef int (*main_entry)(void);
+    //main_entry main = (main_entry)p;
+    //main();
+#if 0
     struct tcb *task = (struct tcb *)task_calloc(sizeof(struct tcb));
     struct tcb *current = this_task();
     struct addrspace *as = current->addrspace;
 
     task_create(task, \
                 (task_entry)entry, \
-                NULL, \
+                "thread1", \
                 CONFIG_DEFAULT_TASK_PRIORITY, \
                 (void *)stack, CONFIG_DEFAULT_TASK_STACKSIZE, TASK_TYPE_USER, as);
 
     task_set_tgid(task, current->tgid);
-    
-    context_set_spsr(&task->context, (PMODE_FIRQ | PMODE_EL2h | PMODE_SERROR));
+
+    context_set_spsr(&task->context, (PMODE_SERROR | PMODE_FIRQ | PMODE_EL1h));
 
     sched_attach(task);
+#else
+    u64 current_el;
+    MRS("CurrentEL", current_el);
+    current_el = bitfield_get(current_el, 2, 2);
+    kprintf("CurrentEL = EL%d\n", current_el);
+
+//(PMODE_DEBUG | PMODE_SERROR | PMODE_IRQ | PMODE_FIRQ | PMODE_EL1h)
+    asm volatile(
+        "msr     elr_el2, %0    \n"
+        "msr     spsr_el2, %1          \n"
+        "eret    \n"
+        :
+        : "r"(0x7000), "r"(PMODE_SERROR | PMODE_FIRQ | PMODE_EL1h)
+        : "memory"
+    );
+#endif
 }
 

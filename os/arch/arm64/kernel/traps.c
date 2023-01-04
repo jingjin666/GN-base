@@ -101,15 +101,18 @@ void cel_sync_traps(void)
 {
     unsigned long esr;
 
-    //kprintf("current el sync_traps\n");
+    kprintf("current el sync_traps\n");
     
     MRS(ESR_ELx, esr);
-    //kprintf("ESR_ELx = %p\n", esr);
+    kprintf("ESR_ELx = %p\n", esr);
 
     kprintf("TRAPS# %s\n", esr_get_class_string(esr));
 
     unsigned long ec = esr >> ESR_ELx_EC_SHIFT;
     //kprintf("ec = %p\n", ec);
+
+    unsigned long iss = esr & ESR_ELx_ISS_MASK;
+    kprintf("iss = %p\n", iss);
 
     unsigned long far_elx;
     unsigned long afsr0_elx;
@@ -128,8 +131,13 @@ void cel_sync_traps(void)
             MRS(AFSR0_ELx, afsr0_elx);
             kprintf("IFAR = %p, AIFSR = %p\n", far_elx, afsr0_elx);
             break;
+        case ESR_ELx_EC_ILL:
+            struct tcb *current = this_task();
+            kprintf("### %s, %d, %p, %p, %p\n", current->name, current->tid, current->context.regs[PSTATE], current->context.regs[SP], current->context.regs[PC]);
+            kprintf("Illegal Execution state!\n");
+            break;
         default:
-            kprintf("unknown sync traps\n");
+            kprintf("cel_sync_traps: unknown sync traps\n");
     }
 
     PANIC();
@@ -179,8 +187,11 @@ void lel_sync_traps(void)
         case ESR_ELx_EC_HVC64:
             kprintf("HVC instruction execution in AArch64 state, when HVC is not disabled!\n");
             break;
+        case ESR_ELx_EC_ILL:
+            kprintf("Illegal Execution state!\n");
+            break;
         default:
-            kprintf("unknown sync traps\n");
+            kprintf("lel_sync_traps: unknown sync traps\n");
     }
 
     PANIC();

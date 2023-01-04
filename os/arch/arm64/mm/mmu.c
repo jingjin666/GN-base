@@ -167,6 +167,7 @@ int as_map(struct addrspace *as, struct mem_region *region, uint32_t prot, RAM_T
 
     if (prot & PROT_EXEC) {
         attr &= ~PTE_UXN;
+        attr &= ~PTE_PXN;
     }
 
     if (prot & PROT_WRITE) {

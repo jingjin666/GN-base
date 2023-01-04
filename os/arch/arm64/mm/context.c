@@ -63,6 +63,8 @@ void restore_current_context(void)
     assert(current);
 
 #if 1
+    #include <instructionset.h>
+
     context_t *ctx = &current->context;
     kprintf("ctx = %p\n", ctx);
     int i = 0;
@@ -70,6 +72,15 @@ void restore_current_context(void)
     {
         kprintf("X[%d, %p] = %p\n", i, &ctx->regs[i], ctx->regs[i]);
         i++;
+    }
+
+    if (current->tid == 2) {
+        unsigned long sp_el1;
+        MRS("SP_EL1", sp_el1);
+        kprintf("111:SP_EL1 = %p\n", sp_el1);
+        MSR("SP_EL1", ctx->regs[SP]);
+        MRS("SP_EL1", sp_el1);
+        kprintf("222:SP_EL1 = %p\n", sp_el1);
     }
 #endif
 
@@ -92,7 +103,7 @@ void restore_current_context(void)
         "msr     spsr_el2, x11          \n"
 #else
         "msr     spsr_el1, x11          \n"
-#endif        
+#endif
 
         "ldp     x0,  x1,  [sp, #16 * 0]         \n"
         "ldp     x2,  x3,  [sp, #16 * 1]         \n"

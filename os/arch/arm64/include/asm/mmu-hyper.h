@@ -15,6 +15,7 @@ extern struct addrspace hyper_user_addrspace;
 void hyper_as_switch(struct addrspace *as, unsigned long type, asid_t asid);
 void hyper_as_initialize(void);
 int  hyper_as_map(struct addrspace *as, struct mem_region *region, uint32_t prot, RAM_TYPE_e type);
+int  _hyper_as_map(struct addrspace *as, struct mem_region *region, uint32_t prot, RAM_TYPE_e type);
 
 #endif /* !__ASSEMBLY__ */
 

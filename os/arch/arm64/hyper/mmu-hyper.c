@@ -173,8 +173,11 @@ int hyper_as_map(struct addrspace *as, struct mem_region *region, uint32_t prot,
        attr &= ~PTE_RDONLY;
     }
 
+    // XN[1:0],Execute-never, stage 2 only
     if (prot & PROT_EXEC) {
+        // The stage 2 control permits execution at EL1 and EL0
         attr &= ~PTE_HYP_XN;
+        attr &= ~PTE_PXN;
     }
 
     // S2AP[1:0]
