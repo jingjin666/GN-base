@@ -11,7 +11,7 @@
 
 #include "scheduler.h"
 
-#define KERNEL_SCHED_SCHEDULER_DEBUG
+//#define KERNEL_SCHED_SCHEDULER_DEBUG
 #ifdef KERNEL_SCHED_SCHEDULER_DEBUG
 #define sched_dbg kdbg
 #define sched_err kerr

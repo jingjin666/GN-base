@@ -52,6 +52,11 @@ void context_set_stack(struct context *ctx, void *stack, u32 size)
     ctx->regs[SP] = (unsigned long)stack + size;
 }
 
+void context_set_sp(struct context *ctx, unsigned long sp)
+{
+    ctx->regs[SP] = sp;
+}
+
 void context_set_spsr(struct context *ctx, unsigned long spsr)
 {
     ctx->regs[PSTATE] = spsr;
@@ -62,9 +67,7 @@ void restore_current_context(void)
     struct tcb *current = this_task();
     assert(current);
 
-#if 1
-    #include <instructionset.h>
-
+#if 0
     context_t *ctx = &current->context;
     kprintf("ctx = %p\n", ctx);
     int i = 0;
@@ -72,15 +75,6 @@ void restore_current_context(void)
     {
         kprintf("X[%d, %p] = %p\n", i, &ctx->regs[i], ctx->regs[i]);
         i++;
-    }
-
-    if (current->tid == 2) {
-        unsigned long sp_el1;
-        MRS("SP_EL1", sp_el1);
-        kprintf("111:SP_EL1 = %p\n", sp_el1);
-        MSR("SP_EL1", ctx->regs[SP]);
-        MRS("SP_EL1", sp_el1);
-        kprintf("222:SP_EL1 = %p\n", sp_el1);
     }
 #endif
 

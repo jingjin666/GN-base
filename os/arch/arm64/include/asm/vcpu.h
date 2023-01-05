@@ -75,6 +75,22 @@
 #define HCR_HOST_NVHE_FLAGS (HCR_RW | HCR_API | HCR_APK | HCR_ATA)
 #define HCR_HOST_VHE_FLAGS (HCR_RW | HCR_TGE | HCR_E2H)
 
+/* Trap WFI/WFE/SMC and override CPSR.AIF */
+#define HCR_COMMON (HCR_TWI | HCR_TWE | HCR_VM | HCR_RW | HCR_AMO | HCR_IMO | HCR_FMO)
+
+/* Allow native tasks to run at EL0, but restrict access */
+#define HCR_NATIVE (HCR_COMMON | HCR_TGE | HCR_TVM | HCR_TTLB | HCR_DC | HCR_TAC | HCR_SWIO |  HCR_TSC)
+
+/* Guest vcpu flags */
+#define HCR_VCPU   (HCR_COMMON | HCR_TSC)
+
+/* Disable MMU, SP alignment check, and alignment check */
+/* A57 default value */
+#define SCTLR_EL1_RES      0x30d00800   /* Reserved value */
+#define SCTLR_EL1_COMMON   ( SCTLR_EL1_RES | SCTLR_EL1_CP15BEN | SCTLR_EL1_UCT | SCTLR_EL1_NTWI | SCTLR_EL1_NTWE )
+#define SCTLR_EL1_NATIVE   (SCTLR_EL1_COMMON | SCTLR_ELx_C | SCTLR_ELx_I | SCTLR_EL1_UCI)
+#define SCTLR_EL1_VM       (SCTLR_EL1_COMMON | SCTLR_EL1_UCI)
+
 /* TCR_EL2 Registers bits */
 #define TCR_EL2_RES1		((1 << 31) | (1 << 23))
 #define TCR_EL2_TBI		(1 << 20)

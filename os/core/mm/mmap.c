@@ -10,6 +10,7 @@
 #include <uapi/util.h>
 #ifdef CONFIG_HYPERVISOR_SUPPORT
 #include <mmu-hyper.h>
+#include <mmu.h>
 #else
 #include <mmu.h>
 #endif
@@ -61,6 +62,8 @@ unsigned long sys_brk(unsigned long brk)
         region.size  = heap_size;
 #ifdef CONFIG_HYPERVISOR_SUPPORT
         hyper_as_map(current->addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+        // 用户态中创建的线程栈通过malloc分配
+        // 在EL2中，把用户态的栈映射给内核，保证内核可以访问用户态的栈，例如：sleep调用的参数传递不是按值传递，传递到内核的是用户态的地址
         as_map(&hyper_kernel_addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);
 #else
         as_map(current->addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);

@@ -6,15 +6,6 @@
 #include <sysreg.h>
 #ifdef CONFIG_HYPERVISOR_SUPPORT
 #include <vcpu.h>
-
-/* Trap WFI/WFE/SMC and override CPSR.AIF */
-#define HCR_COMMON ( HCR_TWI | HCR_TWE | HCR_VM | HCR_RW | HCR_AMO | HCR_IMO | HCR_FMO )
-
-/* Allow native tasks to run at EL0, but restrict access */
-#define HCR_NATIVE ( HCR_COMMON | HCR_TGE | HCR_TVM | HCR_TTLB | HCR_DC \
-                   | HCR_TAC | HCR_SWIO |  HCR_TSC )
-#define HCR_VCPU   ( HCR_COMMON | HCR_TSC)
-
 #endif
 
 #include "cpu.h"
@@ -80,15 +71,27 @@ void cpu_init(void)
     vtcr = read_sysreg(VTCR_EL2);
     kprintf("VTCR_EL2 = 0x%lx\n", vtcr);
 
-    /* 配置HCR */
+    /* 配置HCR_EL2 */
     u64 hcr_el2;
     hcr_el2 = read_sysreg(HCR_EL2);
     kprintf("HCR_EL2 = %p\n", hcr_el2);
 
+    kprintf("HCR_NATIVE = %p\n", HCR_NATIVE);
+    kprintf("HCR_VCPU = %p\n", HCR_VCPU);
     write_sysreg(HCR_NATIVE, HCR_EL2);
 
     hcr_el2 = read_sysreg(HCR_EL2);
     kprintf("HCR_EL2 = %p\n", hcr_el2);
+
+    /* 配置SCTLR_EL1 */
+    u64 sctlr_el1;
+    sctlr_el1 = read_sysreg(SCTLR_EL1);
+    kprintf("sctlr_el1 = %p\n", sctlr_el1);
+
+    write_sysreg(SCTLR_EL1_NATIVE, SCTLR_EL1);
+
+    sctlr_el1 = read_sysreg(SCTLR_EL1);
+    kprintf("sctlr_el1 = %p\n", sctlr_el1);
 #endif
 
     // 重定位中断向量表

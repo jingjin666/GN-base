@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
     char test[10];
     memset(test, 0, 10);
 
-
 #if 0
     void *addr;
     void *addr1;
@@ -87,19 +86,24 @@ int main(int argc, char *argv[])
 
     printf("vm_start = %p, vm_end = %p\n", vm_start, vm_end);
 
-    printf("%p\n", *(unsigned long *)vm_start);
+    printf("%p = %p\n", vm_start, *(unsigned long *)vm_start);
 
 #if 0
     void *stack = malloc(8192);
     printf("stack = %p\n", stack);
 
     thread_create(hello_thread, stack);
-#else
-    thread_create(vm_start, 0x5000);
 #endif
+
+    unsigned long vm_base = vm_start;
+    unsigned long vm_size = vm_end - vm_start;
+    vcpu_create(vm_start, 0, vm_base, vm_size);
+
     while(1)
     {
+        printf("+++\n");
         printf("main data = %p, bss = %p\n", data++, bss--);
+        printf("---\n");
         sleep(1);
     }
 }

@@ -109,7 +109,7 @@ void cel_sync_traps(void)
     kprintf("TRAPS# %s\n", esr_get_class_string(esr));
 
     unsigned long ec = esr >> ESR_ELx_EC_SHIFT;
-    //kprintf("ec = %p\n", ec);
+    kprintf("ec = %p\n", ec);
 
     unsigned long iss = esr & ESR_ELx_ISS_MASK;
     kprintf("iss = %p\n", iss);
@@ -132,8 +132,6 @@ void cel_sync_traps(void)
             kprintf("IFAR = %p, AIFSR = %p\n", far_elx, afsr0_elx);
             break;
         case ESR_ELx_EC_ILL:
-            struct tcb *current = this_task();
-            kprintf("### %s, %d, %p, %p, %p\n", current->name, current->tid, current->context.regs[PSTATE], current->context.regs[SP], current->context.regs[PC]);
             kprintf("Illegal Execution state!\n");
             break;
         default:

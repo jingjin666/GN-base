@@ -23,6 +23,7 @@
 
 #ifdef CONFIG_HYPERVISOR_SUPPORT
 #include <mmu-hyper.h>
+#include <mmu.h>
 #else
 #include <mmu.h>
 #endif
@@ -246,12 +247,6 @@ static void root_task_create(void)
     dev_region.size = 0x1000;
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     hyper_as_map(root_task.addrspace, &dev_region, PROT_READ|PROT_WRITE, RAM_DEVICE);
-
-    dev_region.pbase = UART_PBASE;
-    dev_region.vbase = UART_PBASE;
-    dev_region.size = 0x1000;
-    hyper_as_map(root_task.addrspace, &dev_region, PROT_READ|PROT_WRITE, RAM_DEVICE);
-    //as_map(&hyper_kernel_addrspace, &dev_region, 0, RAM_DEVICE);
 #else
     as_map(root_task.addrspace, &dev_region, 0, RAM_DEVICE);
 #endif
@@ -264,6 +259,7 @@ static void root_task_create(void)
     stack_region.size  = CONFIG_DEFAULT_TASK_STACKSIZE;
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     hyper_as_map(root_task.addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+    // 在EL2中，把用户态的栈映射给内核，保证内核可以访问用户态的栈，例如：sleep调用的参数传递不是按值传递，传递到内核的是用户态的地址
     as_map(&hyper_kernel_addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
 #else
     as_map(root_task.addrspace, &stack_region, PROT_READ|PROT_WRITE, RAM_NORMAL);
@@ -321,8 +317,6 @@ void init_kernel(void)
 #endif
 
     asid_initialize();
-
-    kprintf("test----\n");
 
     // 创建idle任务并初始化调度器
     idle_task_initialize();

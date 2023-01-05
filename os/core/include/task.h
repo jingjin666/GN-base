@@ -53,6 +53,14 @@ typedef struct mm_area
     unsigned long start_bss, end_bss;
 } mm_area_t;
 
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+typedef struct vcpu
+{
+    uint8_t active;
+    struct tcb *task;
+} vcpu_t;
+#endif
+
 typedef struct tcb
 {
     struct list_head link_head;
@@ -76,6 +84,10 @@ typedef struct tcb
     uint8_t         type;
 
     context_t       context;
+
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    vcpu_t          vcpu;
+#endif
 
     addrspace_t    *addrspace;
 
@@ -119,5 +131,6 @@ int  task_assign_tid(struct tcb *task);
 void task_init(struct tcb *task, uint8_t type);
 void task_switch(struct tcb *from, struct tcb *to);
 void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t priority, void *stack, uint32_t stack_size, uint8_t type, struct addrspace *as);
-void sys_thread_create(unsigned long entry, unsigned long stack);
+int sys_thread_create(unsigned long entry, unsigned long stack);
+int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_base, unsigned long vm_size);
 #endif

@@ -14,6 +14,16 @@ void thread_create(unsigned long entry, unsigned long stack)
     ipc_send(450/*SYS_thread_create*/, (void *)buff, sizeof(buff));
 }
 
+void vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_base, unsigned long vm_size)
+{
+    unsigned long buff[4];
+    buff[0] = entry;
+    buff[1] = stack;
+    buff[2] = vm_base;
+    buff[3] = vm_size;
+    ipc_send(451/*SYS_vcpu_create*/, (void *)buff, sizeof(buff));
+}
+
 unsigned long ipc_send(unsigned long msg_id, void *buf, size_t len)
 {
     if (len <= sizeof(long) * 5) {

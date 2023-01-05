@@ -232,11 +232,6 @@ static void elf_map(struct tcb *task, uintptr_t vaddr, size_t size, uint32_t fla
 
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     hyper_as_map(task->addrspace, &elf_region, prot, RAM_NORMAL);
-    if (elf_region.vbase == 0x7000) {
-        as_map(&hyper_kernel_addrspace, &elf_region, PROT_READ|PROT_WRITE|PROT_EXEC, RAM_NORMAL);
-    } else {
-        as_map(&hyper_kernel_addrspace, &elf_region, prot, RAM_NORMAL);
-    }
 #else
     as_map(task->addrspace, &elf_region, prot, RAM_NORMAL);
 #endif
@@ -254,6 +249,7 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
         if (seg->type == PT_LOAD)
         {
             if (seg->flags == (PF_R|PF_X)) {
+                elf_dbg("\n---RE SEGMENT---\n");
                 // RE段
                 task->mm.start_code     = seg->vaddr;
                 task->mm.end_code       = seg->vaddr + seg->memsz;
@@ -262,6 +258,7 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
                 // map base growup under the stack
                 task->mm.mmap_base      = task->mm.start_stack;
             } else if (seg->flags == (PF_R|PF_W)) {
+                elf_dbg("\n---RW SEGMENT---\n");
                 // RW段
                 task->mm.start_data = seg->vaddr;
                 task->mm.end_data   = seg->vaddr + seg->filesz;
@@ -269,12 +266,15 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
                 task->mm.end_bss    = seg->vaddr + seg->memsz;
                 task->mm.start_brk  = PAGE_ALIGN(task->mm.end_bss);
                 task->mm.brk        = task->mm.start_brk;
-            } else {
+            } else if (seg->flags == (PF_R|PF_W|PF_X)) {
+                elf_dbg("\n---RWX SEGMENT---\n");
+                // RWX段
+            }else {
                 // todo
                 PANIC();
             }
 
-            elf_dbg("elf_mmap, vm = %p, size = %p\n", seg->vaddr, seg->memsz);
+            elf_dbg("elf_mmap, vm = %p, size = %p, flags = %p\n", seg->vaddr, seg->memsz, seg->flags);
 
             uintptr_t align_addr = seg->vaddr / seg->align * seg->align;
             size_t align_size = (seg->vaddr % seg->align) + seg->memsz;

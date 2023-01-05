@@ -18,6 +18,7 @@
 #include <registerset.h>
 #ifdef CONFIG_HYPERVISOR_SUPPORT
 #include <mmu-hyper.h>
+#include <vcpu.h>
 #else
 #include <mmu.h>
 #endif
@@ -219,6 +220,14 @@ void task_switch(struct tcb *from, struct tcb *to)
         }
     }
 
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    if (to->vcpu.active) {
+        MSR("hcr_el2", HCR_VCPU);
+    } else {
+        MSR("hcr_el2", HCR_NATIVE);
+    }
+#endif
+
     task_dbg("switch over\n");
 }
 
@@ -254,16 +263,10 @@ static void *task_calloc(size_t size)
     return p;
 }
 
-void sys_thread_create(unsigned long entry, unsigned long stack)
+int sys_thread_create(unsigned long entry, unsigned long stack)
 {
-    kprintf("sys_thread_create\n");
-    unsigned long *p = (unsigned long *)entry;
-    //kprintf("entry %p = %p\n", p, *p);
+    task_dbg("sys_thread_create\n");
 
-    //typedef int (*main_entry)(void);
-    //main_entry main = (main_entry)p;
-    //main();
-#if 0
     struct tcb *task = (struct tcb *)task_calloc(sizeof(struct tcb));
     struct tcb *current = this_task();
     struct addrspace *as = current->addrspace;
@@ -276,24 +279,65 @@ void sys_thread_create(unsigned long entry, unsigned long stack)
 
     task_set_tgid(task, current->tgid);
 
-    context_set_spsr(&task->context, (PMODE_SERROR | PMODE_FIRQ | PMODE_EL1h));
+    sched_attach(task);
+
+    return 0;
+}
+
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+#include <mmap.h>
+int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_base, unsigned long vm_size)
+{
+    task_dbg("sys_vcpu_create\n");
+
+    struct tcb *task = (struct tcb *)task_calloc(sizeof(struct tcb));
+    struct tcb *current = this_task();
+    struct addrspace *as = current->addrspace;
+
+    task_create(task, \
+                (task_entry)entry, \
+                "vcpu1", \
+                CONFIG_DEFAULT_TASK_PRIORITY, \
+                (void *)stack, CONFIG_DEFAULT_TASK_STACKSIZE, TASK_TYPE_USER, as);
+
+    task_set_tgid(task, current->tgid);
+
+    context_set_spsr(&task->context, PSTATE_VCPU);
+
+    context_set_sp(&task->context, 0);
+
+    task->vcpu.active = true;
 
     sched_attach(task);
-#else
-    u64 current_el;
-    MRS("CurrentEL", current_el);
-    current_el = bitfield_get(current_el, 2, 2);
-    kprintf("CurrentEL = EL%d\n", current_el);
 
-//(PMODE_DEBUG | PMODE_SERROR | PMODE_IRQ | PMODE_FIRQ | PMODE_EL1h)
-    asm volatile(
-        "msr     elr_el2, %0    \n"
-        "msr     spsr_el2, %1          \n"
-        "eret    \n"
-        :
-        : "r"(0x7000), "r"(PMODE_SERROR | PMODE_FIRQ | PMODE_EL1h)
-        : "memory"
-    );
-#endif
+    //dump_pgtable_verbose(&task->addrspace->pg_table, 0);
+
+    // 把vm区域重新映射成RWX，原来为RW
+    unsigned long vm_pbase = pgd_addressing((unsigned long *)&task->addrspace->pg_table, vm_base);
+    task_dbg("vm_pbase = %p\n", vm_pbase);
+    if (vm_pbase == -1) {
+        PANIC();
+    }
+
+    // vcpu remap vm ram
+    task_dbg("vm_base = %p, vm_size = %p\n", vm_base, vm_size);
+    assert(vm_base && vm_size);
+    struct mem_region ram_region;
+    ram_region.pbase = vm_pbase;
+    ram_region.vbase = vm_base;
+    ram_region.size = vm_size;
+    hyper_as_map(task->addrspace, &ram_region, PROT_READ|PROT_WRITE|PROT_EXEC, RAM_NORMAL);
+
+    //dump_pgtable_verbose(&task->addrspace->pg_table, 0);
+
+    // vcpu map vm dev
+    struct mem_region dev_region;
+    dev_region.pbase = UART_PBASE;
+    dev_region.vbase = UART_PBASE;
+    dev_region.size = 0x1000;
+    hyper_as_map(task->addrspace, &dev_region, PROT_READ|PROT_WRITE, RAM_DEVICE);
+
+    return 0;
 }
+#endif
 

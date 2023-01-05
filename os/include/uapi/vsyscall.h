@@ -307,6 +307,7 @@
 #define __NR_landlock_add_rule	445
 #define __NR_landlock_restrict_self	446
 #define __NR_thread_create  450
+#define __NR_vcpu_create    451
 #define __NR_last           500
 
 #define SYS_io_setup 0
@@ -611,5 +612,6 @@
 #define SYS_landlock_add_rule	445
 #define SYS_landlock_restrict_self	446
 #define SYS_thread_create   450
+#define SYS_vcpu_create     451
 
 #endif
