@@ -105,6 +105,7 @@ static unsigned long vsys_thread_create(unsigned long *params)
     return sys_thread_create(entry, stack);
 }
 
+#ifdef CONFIG_HYPERVISOR_SUPPORT
 static unsigned long vsys_vcpu_create(unsigned long *params)
 {
     unsigned long p0 = *params++;
@@ -137,6 +138,7 @@ static unsigned long vsys_vcpu_create(unsigned long *params)
 
     return sys_vcpu_create(entry, stack, vm_base, vm_size);
 }
+#endif
 
 sys_callback svc_handlers[SYSCALLS_NUM] = {
     [__NR_ioctl]        = vsys_ioctl,
@@ -148,6 +150,8 @@ sys_callback svc_handlers[SYSCALLS_NUM] = {
     [__NR_exit_group]   = vsys_exit_group,
     [__NR_nanosleep]    = vsys_nanosleep,
     [__NR_thread_create]= vsys_thread_create,
+#ifdef CONFIG_HYPERVISOR_SUPPORT
     [__NR_vcpu_create]  = vsys_vcpu_create,
+#endif
 };
 

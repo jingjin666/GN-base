@@ -18,6 +18,8 @@
 !.vscode/tasks.json
 !musl-1.2.3.tar.gz
 !musl-1.2.3/
+!os/linker.lds_pp
 
 build/config/env.gni
 out/*
+os/linker.lds

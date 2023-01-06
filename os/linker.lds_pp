@@ -1,0 +1,90 @@
+#include <chinos/config.h>
+
+ENTRY(_start);
+
+SECTIONS
+{
+    . = CONFIG_KERNEL_EXEC_ADDR;
+    kernel_start = .;
+    boot_physic_start = .;
+    .boot.physic : AT(ADDR(.boot.physic) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.entry)
+        *(.boot.physic)
+        . = ALIGN(CONFIG_PAGE_SIZE);
+        . += CONFIG_PAGE_SIZE;
+        boot_stack = .;
+    }
+
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    boot_physic_end = .;
+    .boot : AT(ADDR(.boot) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.boot);
+    }
+    .boot.data : AT(ADDR(.boot.data) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.boot.data);
+    }
+
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    boot_end = .;
+    kernel_code_start = .;
+    .text : AT(ADDR(.text) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.vector);
+        *(.text*)
+    }
+
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    kernel_code_end = .;
+    kernel_rodata_start = .;
+    .rodata : AT(ADDR(.rodata) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.rodata*)
+    }
+
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    kernel_rodata_end = .;
+    kernel_data_start = .;
+    .data : AT(ADDR(.data) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.data*)
+    }
+
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    .stack : AT(ADDR(.stack) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.stack*)
+    }
+
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    kernel_data_end = .;
+    kernel_bss_start = .;
+    .bss : AT(ADDR(.bss) - CONFIG_KERNEL_EXEC_ADDR + CONFIG_KERNEL_LOAD_ADDR)
+    {
+        *(.bss*)
+    }
+
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    kernel_bss_end = .;
+    kernel_end = .;
+
+    /DISCARD/ :
+    {
+        *(.note.gnu.build-id)
+        *(.comment)
+    }
+}
+
+SECTIONS
+{
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    user_start = .;
+    .user :
+    {
+        *(.user*)
+    }
+    . = ALIGN(CONFIG_PAGE_SIZE);
+    user_end = .;
+}

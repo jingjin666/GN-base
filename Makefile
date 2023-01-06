@@ -1,14 +1,14 @@
-.PHONY: all clean
+.PHONY: all clean context
 
 TOP_DIR = $(shell pwd)
 
 CC := "aarch64-none-elf-gcc"
 LIBGCC := $(shell $(CC) -print-libgcc-file-name)
-$(info LIBGCC:$(LIBGCC))
+#$(info LIBGCC:$(LIBGCC))
 
 default:all
 
-all:env_prepare
+all:context env_prepare
 	@gn gen out && cd out && ninja -v
 
 $(TOP_DIR)/build/config/env.gni:
@@ -27,4 +27,12 @@ env_prepare:$(TOP_DIR)/build/config/env.gni $(TOP_DIR)/app/musl-1.2.3/out/lib/li
 clean:
 	@echo "clean..."
 	@cd out && ninja -t clean
-	@rm $(TOP_DIR)/build/config/env.gni
+	@rm -rf $(TOP_DIR)/build/config/env.gni
+	@rm -rf $(TOP_DIR)/os/linker.lds
+
+$(TOP_DIR)/os/linker.lds:$(TOP_DIR)/os/include/chinos/config.h
+	@echo "generate os/linker.lds"
+	@$(CC) -E -x c -P -I $(TOP_DIR)/os/include -o $@ $(TOP_DIR)/os/linker.lds_pp
+
+context:$(TOP_DIR)/os/linker.lds
+	@echo "General contex..."
