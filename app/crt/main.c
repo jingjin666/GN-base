@@ -84,10 +84,6 @@ int main(int argc, char *argv[])
     free(addr4);
 #endif
 
-    printf("vm_start = %p, vm_end = %p\n", vm_start, vm_end);
-
-    printf("%p = %p\n", vm_start, *(unsigned long *)vm_start);
-
 #if 0
     void *stack = malloc(8192);
     printf("stack = %p\n", stack);
@@ -95,9 +91,16 @@ int main(int argc, char *argv[])
     thread_create(hello_thread, stack);
 #endif
 
+#define LOAD_VM
+#ifdef LOAD_VM
+    printf("vm_start = %p, vm_end = %p\n", vm_start, vm_end);
+
+    printf("%p = %p\n", vm_start, *(unsigned long *)vm_start);
+
     unsigned long vm_base = vm_start;
     unsigned long vm_size = vm_end - vm_start;
     vcpu_create(vm_start, 0, vm_base, vm_size);
+#endif
 
     while(1)
     {
