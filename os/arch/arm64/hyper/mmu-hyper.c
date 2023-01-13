@@ -120,7 +120,7 @@ static void hyper_kernel_as_switch(void)
 
 void hyper_as_switch(struct addrspace *as, unsigned long type, asid_t asid)
 {
-    //kprintf("switch to addrspace = %p, type = %p, asid = %p\n", &as->pg_table, type, asid);
+    kprintf("switch to addrspace = %p, type = %p, asid = %p\n", &as->pg_table, type, asid);
 
     unsigned long pbase = vbase_to_pbase((unsigned long)&as->pg_table);
     if (type == TASK_TYPE_KERNEL) {
@@ -137,7 +137,9 @@ void hyper_as_switch(struct addrspace *as, unsigned long type, asid_t asid)
         u64 ttbr0;
         MRS("VTTBR_EL2", ttbr0);
         kprintf("prev:VTTBR_EL2 = %p\n", ttbr0);
-        MSR("VTTBR_EL2", pbase);
+
+        MSR("VTTBR_EL2", pbase | asid);
+
         MRS("VTTBR_EL2", ttbr0);
         kprintf("next:VTTBR_EL2 = %p\n", ttbr0);
     } else {

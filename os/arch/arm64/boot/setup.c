@@ -21,8 +21,8 @@
 #include <hyper.h>
 #endif
 
-// 存放恒等映射和初始化映射的页表,这一阶段都使用段式映射,页表空间使用较小,这里初始化4M空间来进行存储管理
-#define EARLY_PGTABLE_NR_PAGES  1024
+// 存放恒等映射和初始化映射的页表,这一阶段都使用段式映射,页表空间使用较小,这里初始化8M空间来进行存储管理
+#define EARLY_PGTABLE_NR_PAGES  2048
 #define EARLY_PGTABLE_MM_SIZE  (PAGE_SIZE * EARLY_PGTABLE_NR_PAGES)
 
 // 恒等映射的PGD页表
@@ -54,9 +54,13 @@ static u64 BOOTPHYSIC early_pgtable_alloc(u64 size)
     for (int i = 0; i < EARLY_PGTABLE_NR_PAGES; i++) {
         if (idmap_pt_mm[i] == 0) {
             idmap_pt_mm[i] = 1;
+            //early_printf("early_pgtable_alloc = %d\n", i);
             return (u64)&idmap_pt_space[i * PAGE_SIZE];
         }
     }
+
+    early_printf("idmap pgtable space overflow\n");
+    PANIC();
     return 0;
 }
 

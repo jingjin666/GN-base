@@ -216,6 +216,7 @@ void task_switch(struct tcb *from, struct tcb *to)
 #endif
         if (b_tlb_flush) {
             b_tlb_flush = false;
+            task_dbg("flush_TLB\n");
             flush_TLB();
         }
     }
@@ -285,6 +286,14 @@ int sys_thread_create(unsigned long entry, unsigned long stack)
 }
 
 #ifdef CONFIG_HYPERVISOR_SUPPORT
+#define VM_ENTRY    RAM_PBASE
+
+#define VM_VBASE    RAM_PBASE
+
+#define VM_MMIO_PBASE    MMIO_PBASE
+#define VM_MMIO_VBASE    MMIO_PBASE
+#define VM_MMIO_SIZE     MMIO_SIZE
+
 #include <mmap.h>
 int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_base, unsigned long vm_size)
 {
@@ -292,15 +301,17 @@ int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_b
 
     struct tcb *task = (struct tcb *)task_calloc(sizeof(struct tcb));
     struct tcb *current = this_task();
-    struct addrspace *as = current->addrspace;
+    // process
+    struct addrspace *as = (struct addrspace *)task_calloc(sizeof(struct addrspace));
 
     task_create(task, \
-                (task_entry)entry, \
+                (task_entry)VM_ENTRY, \
                 "vcpu1", \
                 CONFIG_DEFAULT_TASK_PRIORITY, \
                 (void *)stack, CONFIG_DEFAULT_TASK_STACKSIZE, TASK_TYPE_USER, as);
 
-    task_set_tgid(task, current->tgid);
+    // process
+    task_set_tgid(task, current->tgid + 1);
 
     context_set_spsr(&task->context, PSTATE_VCPU);
 
@@ -310,32 +321,36 @@ int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_b
 
     sched_attach(task);
 
-    //dump_pgtable_verbose(&task->addrspace->pg_table, 0);
-
-    // 把vm区域重新映射成RWX，原来为RW
-    unsigned long vm_pbase = pgd_addressing((unsigned long *)&task->addrspace->pg_table, vm_base);
+    // process
+    unsigned long vm_pbase = pgd_addressing((unsigned long *)&current->addrspace->pg_table, vm_base);
     task_dbg("vm_pbase = %p\n", vm_pbase);
     if (vm_pbase == -1) {
         PANIC();
     }
 
-    // vcpu remap vm ram
-    task_dbg("vm_base = %p, vm_size = %p\n", vm_base, vm_size);
-    assert(vm_base && vm_size);
-    struct mem_region ram_region;
-    ram_region.pbase = vm_pbase;
-    ram_region.vbase = vm_base;
-    ram_region.size = vm_size;
-    hyper_as_map(task->addrspace, &ram_region, PROT_READ|PROT_WRITE|PROT_EXEC, RAM_NORMAL);
+    unsigned long _vm_size = vm_size + 0x1000;
+    unsigned long _vm_vbase = VM_VBASE;
+    unsigned long _vm_base = (unsigned long )task_calloc(_vm_size);
+    unsigned long _vm_pbase = vbase_to_pbase(_vm_base);
+    k_memcpy((void *)_vm_base, (void *)pbase_to_vbase(vm_pbase), vm_size);
 
+    // vcpu remap vm ram
+    task_dbg("_vm_vbase = %p, _vm_pbase = %p, _vm_size = %p, _vm_size = %p\n", _vm_vbase, _vm_pbase, _vm_size, _vm_size);
+    assert(_vm_vbase && _vm_pbase && _vm_size);
+    struct mem_region ram_region;
+    ram_region.pbase = _vm_pbase;
+    ram_region.vbase = _vm_vbase;
+    ram_region.size = _vm_size;
+    hyper_as_map(task->addrspace, &ram_region, PROT_READ|PROT_WRITE|PROT_EXEC, RAM_NORMAL);
     //dump_pgtable_verbose(&task->addrspace->pg_table, 0);
 
     // vcpu map vm dev
     struct mem_region dev_region;
-    dev_region.pbase = UART_PBASE;
-    dev_region.vbase = UART_PBASE;
-    dev_region.size = 0x1000;
+    dev_region.pbase = VM_MMIO_PBASE;
+    dev_region.vbase = VM_MMIO_VBASE;
+    dev_region.size = VM_MMIO_SIZE;
     hyper_as_map(task->addrspace, &dev_region, PROT_READ|PROT_WRITE, RAM_DEVICE);
+    //dump_pgtable_verbose(&task->addrspace->pg_table, 0);
 
     return 0;
 }

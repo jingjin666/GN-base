@@ -87,7 +87,7 @@ static void remove_segments(struct chin_elf *elf)
 	}
 }
 
-static void add_segment(struct chin_elf *elf, size_t type, size_t offset, uintptr_t vaddr,
+static void add_segment(struct chin_elf *elf, size_t type, size_t offset, uintptr_t vaddr, uintptr_t paddr,
 			size_t filesz, size_t memsz, size_t flags, size_t align)
 {
 	struct segment *seg = (struct segment *)elf_calloc(sizeof(struct segment));
@@ -103,7 +103,13 @@ static void add_segment(struct chin_elf *elf, size_t type, size_t offset, uintpt
 
 	seg->type = type;
 	seg->offset = offset;
-	seg->vaddr = vaddr;
+
+    if (vaddr != paddr) {
+	    seg->vaddr = paddr;
+    } else {
+        seg->vaddr = vaddr;
+    }
+
 	seg->filesz = filesz;
 	seg->memsz = memsz;
 	seg->flags = flags;
@@ -140,7 +146,7 @@ static void load_segments(struct chin_elf *elf)
                 case PT_DYNAMIC:
                     /* 把PT_LOAD和PT_DYNAMIC段添加到segments循环链表中 */
     				add_segment(elf, phdr[n].p_type, phdr[n].p_offset,
-    						phdr[n].p_vaddr, phdr[n].p_filesz,
+                            phdr[n].p_vaddr, phdr[n].p_paddr, phdr[n].p_filesz,
     						phdr[n].p_memsz, phdr[n].p_flags,
     						phdr[n].p_align);
                     break;
@@ -191,6 +197,8 @@ static int copy_segment(struct chin_elf *elf, struct segment *seg)
         elf_dbg("copy code = %p, size = %p\n", addr, size);
     } else if(seg->flags == (PF_R|PF_W)) {
         elf_dbg("copy data = %p, size = %p\n", addr, size);
+    } else if(seg->flags == (PF_R|PF_W|PF_X)) {
+        elf_dbg("copy rwx = %p, size = %p\n", addr, size);
     } else {
         elf_err("Unknown segment flags\n");
         return -EINVAL;
@@ -269,7 +277,7 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
             } else if (seg->flags == (PF_R|PF_W|PF_X)) {
                 elf_dbg("\n---RWX SEGMENT---\n");
                 // RWX段
-            }else {
+            } else {
                 // todo
                 PANIC();
             }

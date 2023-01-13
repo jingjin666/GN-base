@@ -67,6 +67,7 @@ typedef struct tcb
 
     pid_t           tid;                        /* This is the task ID of the task */
     pid_t           tgid;                       /* This is the task group ID of the task */
+    struct tcb     *group_leader;               /* This is the group leader of the task group */ 
     uint8_t         sched_priority;             /* Current priority of the task */
     uint8_t         init_priority;              /* Initial priority of the task */
     task_entry      entry;                      /* Entry Point into the task */

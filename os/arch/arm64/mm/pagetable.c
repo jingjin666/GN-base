@@ -58,6 +58,7 @@ static int idmap_pte_map(pmd_t *pmd_p, u64 vaddr, u64 end, u64 paddr, u64 attr, 
     for (next = vaddr; next != end; pte++) {
         next = (next + PAGE_SIZE) & PAGE_MASK;
         next = next < end ? next : end;
+        //pagetable_dbg("page map: va: %p, pa:%p, next:%p\n", vaddr, paddr, next);
         *pte = __pte(((paddr >> PAGE_SHIFT) << PAGE_SHIFT) | PTE_TYPE_PAGE | attr);
         paddr += next - vaddr;
         vaddr = next;
