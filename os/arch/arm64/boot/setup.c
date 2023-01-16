@@ -21,8 +21,8 @@
 #include <hyper.h>
 #endif
 
-// 存放恒等映射和初始化映射的页表,这一阶段都使用段式映射,页表空间使用较小,这里初始化8M空间来进行存储管理
-#define EARLY_PGTABLE_NR_PAGES  2048
+// 存放恒等映射和初始化映射的页表,这一阶段都使用段式映射,页表空间使用较小,这里初始化4M空间来进行存储管理
+#define EARLY_PGTABLE_NR_PAGES  1024
 #define EARLY_PGTABLE_MM_SIZE  (PAGE_SIZE * EARLY_PGTABLE_NR_PAGES)
 
 // 恒等映射的PGD页表
