@@ -7,16 +7,6 @@
 
 #include "fault.h"
 
-#include <init.h>
-#include <gran.h>
-static void *fault_calloc(size_t size)
-{
-    void *p = gran_alloc(g_heap, size);
-    k_memset(p, 0, size);
-    kprintf("fault_calloc p = %p\n", p);
-    return p;
-}
-
 void do_page_fault(unsigned long addr)
 {
     struct tcb *current = this_task();

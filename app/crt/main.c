@@ -97,9 +97,9 @@ int main(int argc, char *argv[])
 
     printf("%p = %p\n", vm_start, *(unsigned long *)vm_start);
 
-    unsigned long vm_base = vm_start;
+    unsigned long vm_base = (unsigned long)vm_start;
     unsigned long vm_size = vm_end - vm_start;
-    vcpu_create(vm_start, 0, vm_base, vm_size);
+    vcpu_create((unsigned long)vm_start, 0, vm_base, vm_size);
 #endif
 
     while(1)

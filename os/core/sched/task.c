@@ -6,6 +6,7 @@
 #include <k_string.h>
 #include <k_limits.h>
 #include <k_assert.h>
+#include <k_stdlib.h>
 #include <k_debug.h>
 #include <scheduler.h>
 #include <uapi/errors.h>
@@ -50,16 +51,6 @@ static asid_t *asid_bitmap;
 #define ASID_FIRST_VERSION	BIT(asid_bits)
 
 #define NUM_USER_ASIDS		ASID_FIRST_VERSION
-
-#include <init.h>
-#include <gran.h>
-static void *asid_calloc(size_t size)
-{
-    void *p = gran_alloc(g_heap, size);
-    k_memset(p, 0, size);
-    task_dbg("asid_calloc p = %p\n", p);
-    return p;
-}
 
 static int get_cpu_asid_bits(void)
 {
@@ -138,7 +129,7 @@ void asid_initialize(void)
 
     asid_bits = asid;
 
-    asid_bitmap = (asid_t *)asid_calloc(NUM_USER_ASIDS);
+    asid_bitmap = (asid_t *)kmalloc(NUM_USER_ASIDS);
     bitmap_zero(asid_bitmap, NUM_USER_ASIDS);
 
     asid_generation = ASID_FIRST_VERSION;
@@ -256,19 +247,11 @@ void task_create(struct tcb *task, task_entry entry, const char *name, uint8_t p
     task->addrspace = as;
 }
 
-static void *task_calloc(size_t size)
-{
-    void *p = gran_alloc(g_heap, size);
-    k_memset(p, 0, size);
-    task_dbg("task_calloc p = %p\n", p);
-    return p;
-}
-
 int sys_thread_create(unsigned long entry, unsigned long stack)
 {
     task_dbg("sys_thread_create\n");
 
-    struct tcb *task = (struct tcb *)task_calloc(sizeof(struct tcb));
+    struct tcb *task = (struct tcb *)kmalloc(sizeof(struct tcb));
     struct tcb *current = this_task();
     struct addrspace *as = current->addrspace;
 
@@ -289,6 +272,7 @@ int sys_thread_create(unsigned long entry, unsigned long stack)
 #define VM_ENTRY    RAM_PBASE
 
 #define VM_VBASE    RAM_PBASE
+#define VM_SIZE     (8 * 1024 * 1024)
 
 #define VM_MMIO_PBASE    MMIO_PBASE
 #define VM_MMIO_VBASE    MMIO_PBASE
@@ -299,10 +283,10 @@ int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_b
 {
     task_dbg("sys_vcpu_create\n");
 
-    struct tcb *task = (struct tcb *)task_calloc(sizeof(struct tcb));
+    struct tcb *task = (struct tcb *)kmalloc(sizeof(struct tcb));
     struct tcb *current = this_task();
     // process
-    struct addrspace *as = (struct addrspace *)task_calloc(sizeof(struct addrspace));
+    struct addrspace *as = (struct addrspace *)kmalloc(sizeof(struct addrspace));
 
     task_create(task, \
                 (task_entry)VM_ENTRY, \
@@ -328,9 +312,9 @@ int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_b
         PANIC();
     }
 
-    unsigned long _vm_size = vm_size + 0x1000;
+    unsigned long _vm_size = VM_SIZE;
     unsigned long _vm_vbase = VM_VBASE;
-    unsigned long _vm_base = (unsigned long )task_calloc(_vm_size);
+    unsigned long _vm_base = (unsigned long )kmalloc(_vm_size);
     unsigned long _vm_pbase = vbase_to_pbase(_vm_base);
     k_memcpy((void *)_vm_base, (void *)pbase_to_vbase(vm_pbase), vm_size);
 

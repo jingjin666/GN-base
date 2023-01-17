@@ -4,6 +4,7 @@
 #include <k_stddef.h>
 #include <k_string.h>
 #include <k_assert.h>
+#include <k_stdlib.h>
 #include <k_debug.h>
 #include <uapi/errors.h>
 #include <elf.h>
@@ -28,21 +29,6 @@
 #define elf_warn(fmt, ...)
 #define elf_info(fmt, ...)
 #endif
-
-#include <init.h>
-#include <gran.h>
-static void *elf_calloc(size_t size)
-{
-    void *p = gran_alloc(g_heap, size);
-    k_memset(p, 0, size);
-    elf_dbg("elf_calloc p = %p\n", p);
-    return p;
-}
-
-static void elf_free(void *p, size_t size)
-{
-    gran_free(g_heap, p, size);
-}
 
 static void dump_elf_header(Elf_Ehdr *hdr)
 {
@@ -83,14 +69,14 @@ static void remove_segments(struct chin_elf *elf)
 	{
 		list_del(&seg->link_head);
 		elf_dbg("free seg %p %p\n", seg, seg->memsz);
-		elf_free(seg, sizeof(struct segment));
+		kfree(seg);
 	}
 }
 
 static void add_segment(struct chin_elf *elf, size_t type, size_t offset, uintptr_t vaddr, uintptr_t paddr,
 			size_t filesz, size_t memsz, size_t flags, size_t align)
 {
-	struct segment *seg = (struct segment *)elf_calloc(sizeof(struct segment));
+	struct segment *seg = (struct segment *)kmalloc(sizeof(struct segment));
 	if (!seg) {
 		elf_err("calloc\n");
 		return;
@@ -220,7 +206,7 @@ static void elf_map(struct tcb *task, uintptr_t vaddr, size_t size, uint32_t fla
 {
     struct mem_region elf_region;
 
-    *addr = (unsigned long)elf_calloc(size);
+    *addr = (unsigned long)kmalloc(size);
     elf_region.pbase = vbase_to_pbase(*addr);
     elf_region.vbase = vaddr;
     elf_region.size  = size;

@@ -3,6 +3,7 @@
 #include <k_stdio.h>
 #include <k_stddef.h>
 #include <k_string.h>
+#include <k_stdlib.h>
 #include <k_debug.h>
 #include <scheduler.h>
 #include <task.h>
@@ -33,16 +34,6 @@
 #define MAX_ERRNO	4096
 #define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
 
-#include <init.h>
-#include <gran.h>
-static void *mmap_calloc(size_t size)
-{
-    void *p = gran_alloc(g_heap, size);
-    k_memset(p, 0, size);
-    mmap_dbg("mmap_calloc p = %p\n", p);
-    return p;
-}
-
 unsigned long sys_brk(unsigned long brk)
 {
 	struct tcb *current = this_task();
@@ -55,7 +46,7 @@ unsigned long sys_brk(unsigned long brk)
 
     int heap_size = brk - mm->brk;
     if (heap_size > 0) {
-        unsigned long vaddr = (unsigned long)mmap_calloc(heap_size);
+        unsigned long vaddr = (unsigned long)kmalloc(heap_size);
         struct mem_region region;
         region.pbase = vbase_to_pbase(vaddr);
         region.vbase = mm->brk;
@@ -130,14 +121,18 @@ unsigned long mmap_region(unsigned long addr, unsigned long len, unsigned long p
     int ret = -EINVAL;
     struct tcb *current = this_task();
 
-    unsigned long vaddr = (unsigned long)mmap_calloc(len);
+    unsigned long vaddr = (unsigned long)kmalloc(len);
 
     struct mem_region region;
     region.pbase = vbase_to_pbase(vaddr);
     region.vbase = addr;
     region.size  = len;
 
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+    hyper_as_map(current->addrspace, &region, PROT_READ|PROT_WRITE, RAM_NORMAL);
+#else
     ret = as_map(current->addrspace, &region, prot, RAM_NORMAL);
+#endif
     if (!ret) {
         //dump_pgtable_verbose(&current->addrspace->pg_table, 0);
         return addr;
@@ -156,7 +151,7 @@ unsigned long do_mmap(unsigned long addr, unsigned long len, unsigned long prot,
 
     //sys_dumpvma();
 
-    struct vm_area *vma = (struct vm_area *)mmap_calloc(sizeof(struct vm_area));
+    struct vm_area *vma = (struct vm_area *)kmalloc(sizeof(struct vm_area));
     INIT_LIST_HEAD(&vma->link_head);
     vma->vm_mm = mm;
     vma->vm_prot = prot;

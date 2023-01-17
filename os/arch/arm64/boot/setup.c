@@ -4,6 +4,7 @@
 #include <k_stdio.h>
 #include <k_string.h>
 #include <k_assert.h>
+#include <k_stddef.h>
 #include <uart.h>
 #include <instructionset.h>
 #include <page-def.h>
@@ -49,19 +50,19 @@ static u64 BOOTPHYSIC idmap_pt_info(void)
    return free;
 }
 
-static u64 BOOTPHYSIC early_pgtable_alloc(u64 size)
+static void* BOOTPHYSIC early_pgtable_alloc(u64 size)
 {
     for (int i = 0; i < EARLY_PGTABLE_NR_PAGES; i++) {
         if (idmap_pt_mm[i] == 0) {
             idmap_pt_mm[i] = 1;
             //early_printf("early_pgtable_alloc = %d\n", i);
-            return (u64)&idmap_pt_space[i * PAGE_SIZE];
+            return &idmap_pt_space[i * PAGE_SIZE];
         }
     }
 
     early_printf("idmap pgtable space overflow\n");
     PANIC();
-    return 0;
+    return NULL;
 }
 
 static void BOOTPHYSIC boot_identify_mapping(void)

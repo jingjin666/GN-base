@@ -4,6 +4,7 @@
 #include <chinos/config.h>
 
 // QEMU-virt
+#define RAM_OFFSET      (0x80000)                   // DTB 512KB
 #define RAM_PBASE       (CONFIG_KERNEL_LOAD_ADDR)
 #define RAM_VBASE       (CONFIG_KERNEL_EXEC_ADDR)
 #define RAM_SIZE        (2 * 1024 * 1024 * 1024UL)  // 1G

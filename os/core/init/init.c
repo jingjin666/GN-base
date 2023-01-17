@@ -4,6 +4,7 @@
 #include <k_stdio.h>
 #include <k_string.h>
 #include <k_assert.h>
+#include <k_stdlib.h>
 #include <uapi/util.h>
 #include <uart.h>
 #include <board.h>
@@ -12,8 +13,7 @@
 #include <pagetable.h>
 #include <addrspace.h>
 #include <generic_timer.h>
-#include <buddy.h>
-#include <gran.h>
+#include <mm_heap.h>
 #include <idle.h>
 #include <task.h>
 #include <scheduler.h>
@@ -122,55 +122,6 @@ void init_image_info(void)
     dump_image_info(vbase_to_pbase((unsigned long)&user_end), RAM_SIZE  + vbase_to_pbase((unsigned long)&kernel_start), "Free RAM");
 }
 
-struct mm_gran *g_heap;
-struct graninfo g_heapinfo;
-struct mem_region kernel_heap_region;
-
-void mem_test(void)
-{
-    // mm_gran test
-    void *addr1 ;
-    void *addr2 ;
-    void *addr3 ;
-    void *addr4 ;
-
-    addr1 = gran_alloc(g_heap, 1024);
-    kprintf("addr1 = %p\n", addr1);
-    addr2 = gran_alloc(g_heap, 1024);
-    kprintf("addr2 = %p\n", addr2);
-    addr3 = gran_alloc(g_heap, 1024);
-    kprintf("addr3 = %p\n", addr3);
-    addr4 = gran_alloc(g_heap, 1024);
-    kprintf("addr4 = %p\n", addr4);
-
-    gran_free(g_heap, addr1, 1024);
-    gran_free(g_heap, addr4, 1024);
-}
-
-static void mm_initialize(void)
-{
-    //extern unsigned long kernel_end;
-    extern unsigned long user_end;
-    extern unsigned long kernel_start;
-
-    unsigned long p_heapstart = (unsigned long)&user_end;
-    unsigned long p_heapend = RAM_SIZE  + (unsigned long)&kernel_start;
-    size_t heapsize = p_heapend - p_heapstart;
-
-    kprintf("heapstart = %p, p_heapend = %p, heapsize = %p\n", p_heapstart, p_heapend, heapsize);
-    g_heap = gran_initialize((void *)p_heapstart, heapsize, PAGE_SHIFT, PAGE_SHIFT);
-    kprintf("g_heap = %p, heapstart = %p, ngranules = %d\n", g_heap, g_heap->heapstart, g_heap->ngranules);
-
-    kernel_heap_region.vbase = p_heapstart;
-    kernel_heap_region.pbase = vbase_to_pbase(p_heapstart);
-    kernel_heap_region.size = heapsize;
-
-    //mm_test();
-
-    gran_dump(g_heap, &g_heapinfo);
-    kprintf("total page = %d, free page = %d, mx free page = %d\n", g_heapinfo.ngranules, g_heapinfo.nfree, g_heapinfo.mxfree);
-}
-
 static struct tcb idle_task;
 extern unsigned long idle_stack;
 static void idle_task_initialize(void)
@@ -252,7 +203,7 @@ static void root_task_create(void)
 #endif
 
     // 给用户任务映射stack
-    void *stack = gran_alloc(g_heap, CONFIG_DEFAULT_TASK_STACKSIZE);
+    void *stack = kmalloc(CONFIG_DEFAULT_TASK_STACKSIZE);
     struct mem_region stack_region;
     stack_region.pbase = vbase_to_pbase((unsigned long)stack);
     stack_region.vbase = USER_STACK_TOP;

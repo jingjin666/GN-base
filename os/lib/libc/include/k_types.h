@@ -16,8 +16,8 @@ typedef unsigned int uint32_t;
 #ifdef CONFIG_ARCH_32
     typedef long long int64_t;
     typedef unsigned long long uint64_t;
-    typedef int intptr_t;
-    typedef unsigned int uintptr_t;
+    typedef long intptr_t;
+    typedef unsigned long uintptr_t;
     typedef unsigned long word_t;
 #elif defined(CONFIG_ARCH_64)
     typedef long int64_t;

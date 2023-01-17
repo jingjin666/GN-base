@@ -150,7 +150,7 @@ static inline int test_and_clear_bit(int nr, unsigned long *addr)
  */
 static inline unsigned long *bitmap_alloc(int nbits)
 {
-	return k_calloc(1, BITS_TO_LONGS(nbits) * sizeof(unsigned long));
+	return kcalloc(1, BITS_TO_LONGS(nbits) * sizeof(unsigned long));
 }
 
 /*
@@ -159,7 +159,7 @@ static inline unsigned long *bitmap_alloc(int nbits)
  */
 static inline void bitmap_free(unsigned long *bitmap)
 {
-	k_free(bitmap);
+	kfree(bitmap);
 }
 
 /*

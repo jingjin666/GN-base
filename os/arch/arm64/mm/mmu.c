@@ -3,6 +3,7 @@
 #include <kernel.h>
 #include <k_stdio.h>
 #include <k_string.h>
+#include <k_stdlib.h>
 #include <uapi/util.h>
 #include <board.h>
 #include <irq.h>
@@ -15,6 +16,7 @@
 #include <init.h>
 #include <task.h>
 #include <mmap.h>
+#include <mm_heap.h>
 
 #include "mmu.h"
 
@@ -23,11 +25,9 @@ extern const struct mem_region kernel_dev_ram[];
 struct addrspace kernel_addrspace;
 struct addrspace user_addrspace;
 
-static unsigned long pt_calloc(size_t size)
+static u64 pt_calloc(size_t size)
 {
-    void *v_page = gran_alloc(g_heap, size);
-    k_memset(v_page, 0, size);
-    return (unsigned long)v_page;
+    return (u64)kcalloc(1, size);
 }
 
 static int region_map(struct page_table *pgtable, struct mem_region *region, pgprot_t prot)
