@@ -204,6 +204,7 @@ static void root_task_create(void)
 
     // 给用户任务映射stack
     void *stack = kmalloc(CONFIG_DEFAULT_TASK_STACKSIZE);
+    k_memset(stack, 0, CONFIG_DEFAULT_TASK_STACKSIZE);
     struct mem_region stack_region;
     stack_region.pbase = vbase_to_pbase((unsigned long)stack);
     stack_region.vbase = USER_STACK_TOP;

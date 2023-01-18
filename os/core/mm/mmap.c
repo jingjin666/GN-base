@@ -47,6 +47,7 @@ unsigned long sys_brk(unsigned long brk)
     int heap_size = brk - mm->brk;
     if (heap_size > 0) {
         unsigned long vaddr = (unsigned long)kmalloc(heap_size);
+        k_memset(vaddr, 0, heap_size);
         struct mem_region region;
         region.pbase = vbase_to_pbase(vaddr);
         region.vbase = mm->brk;
@@ -122,6 +123,7 @@ unsigned long mmap_region(unsigned long addr, unsigned long len, unsigned long p
     struct tcb *current = this_task();
 
     unsigned long vaddr = (unsigned long)kmalloc(len);
+    k_memset(vaddr, 0, len);
 
     struct mem_region region;
     region.pbase = vbase_to_pbase(vaddr);
@@ -152,6 +154,7 @@ unsigned long do_mmap(unsigned long addr, unsigned long len, unsigned long prot,
     //sys_dumpvma();
 
     struct vm_area *vma = (struct vm_area *)kmalloc(sizeof(struct vm_area));
+    k_memset(vma, 0, sizeof(*vma));
     INIT_LIST_HEAD(&vma->link_head);
     vma->vm_mm = mm;
     vma->vm_prot = prot;

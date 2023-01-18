@@ -78,9 +78,10 @@ static void add_segment(struct chin_elf *elf, size_t type, size_t offset, uintpt
 {
 	struct segment *seg = (struct segment *)kmalloc(sizeof(struct segment));
 	if (!seg) {
-		elf_err("calloc\n");
+		elf_err("kmalloc segment\n");
 		return;
 	}
+    k_memset(seg, 0, sizeof(*seg));
 
 	if (memsz < filesz) {
 		elf_err("Memsz smaller than filesz\n");
@@ -207,6 +208,8 @@ static void elf_map(struct tcb *task, uintptr_t vaddr, size_t size, uint32_t fla
     struct mem_region elf_region;
 
     *addr = (unsigned long)kmalloc(size);
+    k_memset(*addr, 0, size);
+
     elf_region.pbase = vbase_to_pbase(*addr);
     elf_region.vbase = vaddr;
     elf_region.size  = size;
@@ -262,7 +265,7 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
                 task->mm.brk        = task->mm.start_brk;
             } else if (seg->flags == (PF_R|PF_W|PF_X)) {
                 elf_dbg("\n---RWX SEGMENT---\n");
-                // RWX段
+                // RWX段-VM
             } else {
                 // todo
                 PANIC();

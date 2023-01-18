@@ -130,6 +130,7 @@ void asid_initialize(void)
     asid_bits = asid;
 
     asid_bitmap = (asid_t *)kmalloc(NUM_USER_ASIDS);
+    k_memset(asid_bitmap, 0, sizeof(*asid_bitmap));
     bitmap_zero(asid_bitmap, NUM_USER_ASIDS);
 
     asid_generation = ASID_FIRST_VERSION;
@@ -252,6 +253,7 @@ int sys_thread_create(unsigned long entry, unsigned long stack)
     task_dbg("sys_thread_create\n");
 
     struct tcb *task = (struct tcb *)kmalloc(sizeof(struct tcb));
+    k_memset(task, 0, sizeof(*task));
     struct tcb *current = this_task();
     struct addrspace *as = current->addrspace;
 
@@ -284,9 +286,11 @@ int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_b
     task_dbg("sys_vcpu_create\n");
 
     struct tcb *task = (struct tcb *)kmalloc(sizeof(struct tcb));
+    k_memset(task, 0, sizeof(*task));
     struct tcb *current = this_task();
     // process
     struct addrspace *as = (struct addrspace *)kmalloc(sizeof(struct addrspace));
+    k_memset(as, 0, sizeof(*as));
 
     task_create(task, \
                 (task_entry)VM_ENTRY, \
@@ -315,6 +319,7 @@ int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_b
     unsigned long _vm_size = VM_SIZE;
     unsigned long _vm_vbase = VM_VBASE;
     unsigned long _vm_base = (unsigned long )kmalloc(_vm_size);
+    k_memset(_vm_base, 0, _vm_size);
     unsigned long _vm_pbase = vbase_to_pbase(_vm_base);
     k_memcpy((void *)_vm_base, (void *)pbase_to_vbase(vm_pbase), vm_size);
 
