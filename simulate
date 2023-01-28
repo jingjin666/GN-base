@@ -1,2 +1,2 @@
 #!/bin/bash
-qemu-system-aarch64 -M virt,gic-version=3 -cpu cortex-a53 -m 1024 -nographic -kernel ./out/image/os.elf
+qemu-system-aarch64 -M virt,gic-version=3 -cpu cortex-a53 -m 2048 -nographic -kernel ./out/image/os.elf

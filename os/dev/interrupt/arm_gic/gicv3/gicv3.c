@@ -325,7 +325,7 @@ static void distributor_init(void)
     uint64_t affinity = mpidr_to_gic_affinity();
     kprintf("affinity = %p\n", affinity);
     for (i = 32; i < gic_max_int; i++) {
-        putreg64(GICD_IROUTER(i), affinity);
+        putreg64(affinity, GICD_IROUTER(i));
     }
     gicd_wait_rwp();
 
