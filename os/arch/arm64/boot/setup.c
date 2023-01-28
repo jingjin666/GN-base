@@ -4,7 +4,6 @@
 #include <k_stdio.h>
 #include <k_string.h>
 #include <k_assert.h>
-#include <k_stddef.h>
 #include <uart.h>
 #include <instructionset.h>
 #include <page-def.h>
@@ -22,19 +21,33 @@
 #include <hyper.h>
 #endif
 
+extern int BOOTPHYSIC early_printf(const char *fmt, ...);
+extern void BOOTPHYSIC early_uart_init(unsigned long base);
+
 // 存放恒等映射和初始化映射的页表,这一阶段都使用段式映射,页表空间使用较小,这里初始化4M空间来进行存储管理
 #define EARLY_PGTABLE_NR_PAGES  1024
 #define EARLY_PGTABLE_MM_SIZE  (PAGE_SIZE * EARLY_PGTABLE_NR_PAGES)
 
+/*
+ * 为什么要使用两个页表来进行启动映射
+ * 在非虚拟化场景下，恒等映射和内核映射的起始虚拟地址对应的idx相同，这样会导致内核映射会覆盖掉恒等映射，导致内核无法启动
+ * 在虚拟化场景下（NVHE），恒等映射的地址和内核映射的地址对应的idx不同，这样就不会存在映射覆盖问题，但这也是一个不太合理的操作
+ * 在虚拟化场景下（VHE），由于存在TTBR1_EL2，则可以兼容非虚拟化和虚拟化这两种场景下的映射，通过使用两个启动页表来进行内核启动，这样同时解决了VNHE下的那个不合理操作的问题
+ */
 // 恒等映射的PGD页表
 static BOOTDATA struct page_table identifymap_pt;
+// 内核启动的PGD页表
+static BOOTDATA struct page_table bootkernelmap_pt;
+
 // 页表空间
 static BOOTDATA char idmap_pt_space[EARLY_PGTABLE_MM_SIZE];
 // 页表内存管理的数据结构
 static BOOTDATA char idmap_pt_mm[EARLY_PGTABLE_NR_PAGES];
 
-static void BOOTPHYSIC idmap_pt_init(void)
+static void BOOTPHYSIC boot_pt_init(void)
 {
+    k_memset(&identifymap_pt, 0, sizeof(identifymap_pt));
+    k_memset(&bootkernelmap_pt, 0, sizeof(bootkernelmap_pt));
     k_memset(idmap_pt_space, 0, sizeof(idmap_pt_space));
     k_memset(idmap_pt_mm, 0, sizeof(idmap_pt_mm));
 }
@@ -50,31 +63,31 @@ static u64 BOOTPHYSIC idmap_pt_info(void)
    return free;
 }
 
-static void* BOOTPHYSIC early_pgtable_alloc(u64 size)
+static u64 BOOTPHYSIC early_pgtable_alloc(u64 size)
 {
     for (int i = 0; i < EARLY_PGTABLE_NR_PAGES; i++) {
         if (idmap_pt_mm[i] == 0) {
             idmap_pt_mm[i] = 1;
             //early_printf("early_pgtable_alloc = %d\n", i);
-            return &idmap_pt_space[i * PAGE_SIZE];
+            return (u64)&idmap_pt_space[i * PAGE_SIZE];
         }
     }
 
     early_printf("idmap pgtable space overflow\n");
     PANIC();
-    return NULL;
+    return 0;
 }
 
 static void BOOTPHYSIC boot_identify_mapping(void)
 {
     // 注意此刻内存环境都在物理地址空间下进行
     extern unsigned long boot_physic_start;
-    //extern unsigned long boot_end;
+    extern unsigned long boot_end;
     u64 vaddr, paddr, size, attr;
 
     vaddr = (u64)&boot_physic_start;
     paddr = (u64)&boot_physic_start;
-    size = RAM_SIZE;
+    size = ALIGN((u64)&boot_end - (u64)&boot_physic_start, SECTION_SIZE);
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     attr = pgprot_val(PAGE_HYP_RWX);
 #else
@@ -95,30 +108,36 @@ static void BOOTPHYSIC boot_kernel_mapping(void)
     // 映射内核普通内存
     vaddr = RAM_VBASE;
     paddr = RAM_PBASE;
-    size = RAM_SIZE;
+    size = ALIGN(RAM_SIZE, SECTION_SIZE);
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     attr = pgprot_val(PAGE_HYP_RWX);
+    if (has_vhe())
+        idmap_pt_map((pgd_t *)&bootkernelmap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
+    else
+        idmap_pt_map((pgd_t *)&identifymap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
 #else
     attr = pgprot_val(PAGE_KERNEL_RWX);
+    idmap_pt_map((pgd_t *)&bootkernelmap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
 #endif
     early_printf("%s:%d#pg_map: va:%p, pa:%p, size:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
-    idmap_pt_map((pgd_t *)&identifymap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
-
-    //dump_pgtable_verbose((pgd_t *)&identifymap_pt, 1);
+    //dump_pgtable_verbose((pgd_t *)&bootkernelmap_pt, 1);
 
     // 映射内核设备内存
     vaddr = MMIO_VBASE;
     paddr = MMIO_PBASE;
-    size = MMIO_SIZE;
+    size = ALIGN(MMIO_SIZE, SECTION_SIZE);
 #ifdef CONFIG_HYPERVISOR_SUPPORT
     attr = pgprot_val(PAGE_HYP_DEVICE);
+    if (has_vhe())
+        idmap_pt_map((pgd_t *)&bootkernelmap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
+    else
+        idmap_pt_map((pgd_t *)&identifymap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
 #else
     attr = PROT_SECT_DEVICE_nGnRE;
+    idmap_pt_map((pgd_t *)&bootkernelmap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
 #endif
     early_printf("%s:%d#pg_map: va:%p, pa:%p, size:%p, %p\n", __FUNCTION__, __LINE__, vaddr, paddr, size, attr);
-    idmap_pt_map((pgd_t *)&identifymap_pt, vaddr, paddr, size, attr, early_pgtable_alloc);
-
-    //dump_pgtable_verbose((pgd_t *)&identifymap_pt, 1);
+    //dump_pgtable_verbose((pgd_t *)&bootkernelmap_pt, 1);
 }
 
 static void BOOTPHYSIC set_ttbr(void)
@@ -137,7 +156,7 @@ static void BOOTPHYSIC set_ttbr(void)
         // VHE
         /* TTBR1 */
         early_printf("VHE\n");
-        write_sysreg((u64)&identifymap_pt, TTBR1_EL2);
+        write_sysreg((u64)&bootkernelmap_pt, TTBR1_EL2);
         ttbr1 = read_sysreg(TTBR1_EL2);
         early_printf("TTBR1_EL2 = 0x%lx\n", ttbr1);
     } else {
@@ -151,7 +170,7 @@ static void BOOTPHYSIC set_ttbr(void)
     early_printf("TTBR0_EL1 = 0x%lx\n", ttbr0);
 
     /* TTBR1 */
-    MSR("TTBR1_EL1", (u64)&identifymap_pt);
+    MSR("TTBR1_EL1", (u64)&bootkernelmap_pt);
     MRS("TTBR1_EL1", ttbr1);
     early_printf("TTBR1_EL1 = 0x%lx\n", ttbr1);
 #endif
@@ -230,8 +249,10 @@ void BOOTPHYSIC boot_setup_mmu(void)
     early_printf("TCR_EL1 = 0x%lx\n", tcr);
 #endif
 
-    idmap_pt_init();
+    boot_pt_init();
+
     boot_identify_mapping();
+
     boot_kernel_mapping();
 
     set_ttbr();

@@ -7,7 +7,7 @@
 #define RAM_OFFSET      (0x80000)                   // DTB 512KB
 #define RAM_PBASE       (CONFIG_KERNEL_LOAD_ADDR)
 #define RAM_VBASE       (CONFIG_KERNEL_EXEC_ADDR)
-#define RAM_SIZE        (2 * 1024 * 1024 * 1024UL)  // 1G
+#define RAM_SIZE        (2 * 1024 * 1024 * 1024UL)
 
 #define MMIO_PBASE      (0x0)
 #define MMIO_VBASE      (CONFIG_KERNEL_DEVICE_EXEC_ADDR)
