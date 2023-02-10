@@ -337,4 +337,44 @@
 	ECN(SOFTSTP_CUR), ECN(WATCHPT_LOW), ECN(WATCHPT_CUR), \
 	ECN(BKPT32), ECN(VECTOR32), ECN(BRK64)
 
+typedef enum vcpu_reg {
+    VCPU_REG_SCTLR = 0,
+    VCPU_REG_TTBR0,
+    VCPU_REG_TTBR1,
+    VCPU_REG_TCR,
+    VCPU_REG_MAIR,
+    VCPU_REG_AMAIR,
+    VCPU_REG_CONTEXTIDR,
+    VCPU_REG_ACTLR,
+    VCPU_REG_CPACR,
+    VCPU_REG_AFSR0,
+    VCPU_REG_AFSR1,
+    VCPU_REG_ESR,
+    VCPU_REG_FAR,
+    VCPU_REG_ISR,
+    VCPU_REG_VBAR,
+    VCPU_REG_TPIDR_EL1,
+    VCPU_REG_SP_EL1,
+    VCPU_REG_ELR_EL1,
+    VCPU_REG_SPSR_EL1,
+    VCPU_REG_CNTV_CTL,
+    VCPU_REG_CNTV_CVAL,
+    VCPU_REG_CNTVOFF,
+    VCPU_REG_CNTKCTL_EL1,
+
+    VCPU_REG_NUM
+} vcpu_reg_e;
+
+#define GIC_VCPU_MAX_NUM_LR 16
+
+struct vcpu_gic {
+    uint32_t hcr;
+    uint32_t vmcr;
+    uint32_t apr;
+    uint64_t lr[GIC_VCPU_MAX_NUM_LR];
+};
+
+void vcpu_store(void);
+void vcpu_restore(void);
+
 #endif /* __ASM_VCPU_H */

@@ -28,6 +28,15 @@ extern char vm_end[];
 int data = 0x1234;
 int bss;
 
+static void hvc(int64_t n)
+{
+    asm volatile(
+        "mov x7, %0\n"
+        "hvc #0\n"
+        :: "r"(n)
+        : "x7");
+}
+
 void hello_thread(void)
 {
     int i = 0;
@@ -50,6 +59,9 @@ int main(int argc, char *argv[])
 
     char test[10];
     memset(test, 0, 10);
+
+    hvc(1);
+    while(1);
 
 #if 0
     void *addr;

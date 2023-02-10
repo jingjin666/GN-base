@@ -7,6 +7,9 @@
 #include <uapi/list.h>
 #include <addrspace.h>
 #include <context.h>
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+#include <vcpu.h>
+#endif
 
 #define TASK_TYPE_USER      0x00
 #define TASK_TYPE_KERNEL    0xff
@@ -58,6 +61,8 @@ typedef struct vcpu
 {
     uint8_t active;
     struct tcb *task;
+    struct vcpu_gic vgic;
+    uint64_t regs[VCPU_REG_NUM];
 } vcpu_t;
 #endif
 
