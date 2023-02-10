@@ -97,7 +97,7 @@ static void kernel_as_switch(void)
     u64 ttbr0;
     MSR("TTBR0_EL1", ks_pbase);
     MRS("TTBR0_EL1", ttbr0);
-    kprintf("TTBR0_EL2 = 0x%lx\n", ttbr0);
+    kprintf("TTBR0_EL1 = 0x%lx\n", ttbr0);
 
     /* TTBR1 */
     u64 ttbr1;

@@ -13,13 +13,13 @@ arch_cflags = [ "-nostdlib",
                 "-fno-strict-aliasing" ]
 
 debug_build_flags =  []
-#debug_build_flags =  [ "-g" ]
+debug_build_flags =  [ "-g" ]
 debug_build_flags += [ "-Wall",
                        "-Wstrict-prototypes",
                        "-Wshadow",
                        "-Wundef" ]
 
-arch_optimaztion_flags = []
+arch_optimaztion_flags = [ "-O0" ]
 
 arch_flags  = arch_cpuflags + arch_cflags + debug_build_flags + arch_optimaztion_flags
 

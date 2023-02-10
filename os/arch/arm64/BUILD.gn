@@ -12,6 +12,7 @@ source_set(module_name) {
         "mm/pagetable.c",
         "mm/memory.c",
         "hyper/mmu-hyper.c",
+        "hyper/vcpu.c",
         "kernel/cpu.c",
         "kernel/fpu.c",
         "kernel/halt.c",

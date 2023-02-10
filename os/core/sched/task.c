@@ -274,7 +274,7 @@ int sys_thread_create(unsigned long entry, unsigned long stack)
 #define VM_ENTRY    RAM_PBASE
 
 #define VM_VBASE    RAM_PBASE
-#define VM_SIZE     (8 * 1024 * 1024)
+#define VM_SIZE     (32 * 1024 * 1024)
 
 #define VM_MMIO_PBASE    MMIO_PBASE
 #define VM_MMIO_VBASE    MMIO_PBASE
@@ -323,8 +323,8 @@ int sys_vcpu_create(unsigned long entry, unsigned long stack, unsigned long vm_b
     unsigned long _vm_pbase = vbase_to_pbase(_vm_base);
     k_memcpy((void *)_vm_base, (void *)pbase_to_vbase(vm_pbase), vm_size);
 
-    // vcpu remap vm ram
-    task_dbg("_vm_vbase = %p, _vm_pbase = %p, _vm_size = %p, _vm_size = %p\n", _vm_vbase, _vm_pbase, _vm_size, _vm_size);
+    // vcpu map vm ram
+    task_dbg("_vm_vbase = %p, _vm_pbase = %p, _vm_size = %p\n", _vm_vbase, _vm_pbase, _vm_size);
     assert(_vm_vbase && _vm_pbase && _vm_size);
     struct mem_region ram_region;
     ram_region.pbase = _vm_pbase;

@@ -150,21 +150,32 @@ void lel_sync_traps(void)
 {
     unsigned long esr;
 
-    //kprintf("lower el sync_traps\n");
+    kprintf("lower el sync_traps\n");
     
     MRS(ESR_ELx, esr);
-    //kprintf("ESR_ELx = %p\n", esr);
+    kprintf("ESR_ELx = %p\n", esr);
 
     kprintf("TRAPS# %s\n", esr_get_class_string(esr));
 
     unsigned long ec = esr >> ESR_ELx_EC_SHIFT;
-    //kprintf("ec = %p\n", ec);
+    kprintf("ec = %p\n", ec);
 
     unsigned long far_elx;
     unsigned long afsr0_elx;
 
     switch (ec)
     {
+        case ESR_ELx_EC_WFx:
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+            vcpu_store();
+#endif
+            schedule();
+
+#ifdef CONFIG_HYPERVISOR_SUPPORT
+            vcpu_restore();
+#endif
+            restore_current_context();
+            break;
         case ESR_ELx_EC_DABT_LOW:
             kprintf("Data Abort from a lower Exception level!\n");
             MRS(FAR_ELx, far_elx);
