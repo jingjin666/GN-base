@@ -168,7 +168,6 @@ static void boot_user_elf(struct tcb *task, struct chin_elf *elf)
     }
 }
 
-#if 1
 #define USER_STACK_TOP    ((1UL << VA_BITS) - CONFIG_DEFAULT_TASK_STACKSIZE)
 static void root_task_create(void)
 {
@@ -219,7 +218,6 @@ static void root_task_create(void)
 
     sched_attach(&root_task);
 }
-#endif
 
 void init_kernel(void)
 {

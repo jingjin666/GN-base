@@ -6,7 +6,7 @@
         {
             "label": "qemu",
             "type": "shell",
-            "command": "qemu-system-aarch64 -M virt -cpu cortex-a53 -m 1024 -nographic -kernel  ${workspaceFolder}/out/os.elf -S -s",
+            "command": "qemu-system-aarch64 -M virt,gic-version=3,virtualization=on -cpu cortex-a53 -m 2048 -nographic -kernel ${workspaceFolder}/out/os.elf -S -s",
             "presentation": {
                 "echo": true,
                 "clear": true,

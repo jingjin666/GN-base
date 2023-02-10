@@ -8,7 +8,7 @@
 
 #ifdef CONFIG_MM_BUDDY
 
-#define CONFIG_BUDDY_MAX_LEN (1 << 11)
+#define CONFIG_BUDDY_MAX_LEN (1 << 13)
 
 #define CONFIG_PAGE_SHIFT (12)
 
