@@ -94,6 +94,10 @@ void cpu_init(void)
     kprintf("sctlr_el1 = %p\n", sctlr_el1);
 #endif
 
+#ifdef CONFIG_ARM_PMU
+    pmu_init();
+#endif
+
     // 重定位中断向量表
     relocate_vector();
 }

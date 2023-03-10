@@ -101,3 +101,19 @@ void cleanInvalidateL1Caches(void)
     dsb();
 }
 
+void cleanCaches_PoU(void)
+{
+    dsb();
+    clean_D_PoU();
+    dsb();
+    invalidate_I_PoU();
+    dsb();
+}
+
+void cleanInvalidateCaches(void)
+{
+    cleanCaches_PoU();
+    cleanInvalidateL1Caches();
+    isb();
+}
+

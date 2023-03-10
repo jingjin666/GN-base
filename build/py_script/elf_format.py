@@ -18,9 +18,9 @@ lib_lds = ""
  
 #获取命令行参数
 try:
-    opts, args = getopt.getopt(sys.argv[1:],"",["format_tool=","elf=","bin=","hex=","dump=","lib=","dir=","flag=","elf_flag=","lib_lds="])
+    opts, args = getopt.getopt(sys.argv[1:],"",["format_tool=","elf=","bin=","hex=","dump=","symbols=","lib=","dir=","flag=","elf_flag=","lib_lds="])
 except getopt.GetoptError:
-    print("elf_format.py --format_tool <tool_path> --elf <elf_path> --bin <bin_path> --hex <hex_path> --dump <dump_path> --lib <lib_path> --dir <out_dir> --flag <b or h or d or l> --elf_flag <> --lib_lds<lib_lds>")
+    print("elf_format.py --format_tool <tool_path> --elf <elf_path> --bin <bin_path> --hex <hex_path> --dump <dump_path> --symbols <symbols_path> --lib <lib_path> --dir <out_dir> --flag <b or h or d or l> --elf_flag <> --lib_lds<lib_lds>")
     sys.exit(2)
 for opt, val in opts:
     if opt in ("--format_tool"):
@@ -33,6 +33,8 @@ for opt, val in opts:
         hex_path = val
     if opt in ("--dump"):
         dump_path = val
+    if opt in ("--symbols"):
+        symbols_path = val
     if opt in ("--lib"):
         lib_path = val
     if opt in ("--dir"):
@@ -49,12 +51,14 @@ for opt, val in opts:
 #print(bin_path)
 #print(hex_path)
 #print(dump_path)
+#print(symbols_path)
 #print(lib_path)
 #print(out_dir)
 #print(flag)
  
 objcopy = format_tool+"objcopy"
 objdump = format_tool+"objdump"
+nm = format_tool+"nm"
 ld = format_tool+"ld"
 
 #生成bin文件
@@ -68,6 +72,8 @@ if "h" in flag:
 #生成dump文件
 if "d" in flag:
     os.system(objdump+" -D -Slx "+elf_path+" > "+dump_path)
+    os.system(nm+" -n "+elf_path+" > "+symbols_path)
+    #os.system(nm+" -f sysv -n "+elf_path+" > "+symbols_path)
     
 #生成lib文件
 if "l" in flag:

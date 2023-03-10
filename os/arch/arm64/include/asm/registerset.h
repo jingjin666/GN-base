@@ -24,12 +24,12 @@
 #define DAIF_DEBUG              (1 << 9)
 #define DAIFSET_MASK            0xf
 
-#define PSTATE_USER         (PMODE_FIRQ | PMODE_EL0t | PMODE_SERROR)
+#define PSTATE_USER         (PMODE_EL0t | PMODE_SERROR)
 #ifdef CONFIG_HYPERVISOR_SUPPORT
 #define PSTATE_VCPU         (PMODE_FIRQ | PMODE_EL1h | PMODE_SERROR)
 #define PSTATE_KERNEL       (PMODE_FIRQ | PMODE_EL2h | PMODE_SERROR)
 #else
-#define PSTATE_KERNEL       (PMODE_FIRQ | PMODE_EL1h | PMODE_SERROR)
+#define PSTATE_KERNEL       (PMODE_EL1h | PMODE_SERROR)
 #endif
 
 /* CPACR_EL1 register */

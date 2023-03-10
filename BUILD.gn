@@ -34,6 +34,7 @@ target_elf = "$root_out_dir/image/app.elf"
 target_bin = "$root_out_dir/image/app.bin"
 target_hex = "$root_out_dir/image/app.hex"
 target_dump = "$root_out_dir/image/app.dump"
+target_symbols = "$root_out_dir/image/app.symbols"
 
 copy("copy_app") {
     deps = [ ":app" ]
@@ -55,6 +56,7 @@ action("build_app") {
         "$target_bin",
         "$target_hex",
         "$target_dump",
+        "$target_symbols",
     ]
 
     args = [
@@ -68,6 +70,8 @@ action("build_app") {
         rebase_path("$target_hex"),
         "--dump",
         rebase_path("$target_dump"),
+        "--symbols",
+        rebase_path("$target_symbols"),
         "--dir",
         rebase_path("$root_out_dir/image"),
         "--flag",
@@ -107,6 +111,7 @@ target_elf = "$root_out_dir/image/os.elf"
 target_bin = "$root_out_dir/image/os.bin"
 target_hex = "$root_out_dir/image/os.hex"
 target_dump = "$root_out_dir/image/os.dump"
+target_symbols = "$root_out_dir/image/os.symbols"
 
 copy("copy_os") {
     deps = [ ":os" ]
@@ -128,6 +133,7 @@ action("build_os") {
         "$target_bin",
         "$target_hex",
         "$target_dump",
+        "$target_symbols",
     ]
 
     args = [
@@ -141,6 +147,8 @@ action("build_os") {
         rebase_path("$target_hex"),
         "--dump",
         rebase_path("$target_dump"),
+        "--symbols",
+        rebase_path("$target_symbols"),
         "--dir",
         rebase_path("$root_out_dir/image"),
         "--flag",

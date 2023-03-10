@@ -151,6 +151,11 @@ struct gicv3_config_desc defualt_gicv3_config_desc =
 #define ICC_DIR_EL1     "S3_0_C12_C11_1"
 #define ICC_SGI1R_EL1   "S3_0_C12_C11_5"
 
+#define ICC_IAR0_EL1    "S3_0_C12_C8_0"
+#define ICC_BPR0_EL1    "S3_0_C12_C8_3"
+#define ICC_IGRPEN0_EL1 "S3_0_C12_C12_6"
+#define ICC_EOIR0_EL1   "S3_0_C12_C8_1"
+
 /* Virt control registers */
 #define ICH_AP0R0_EL2   "S3_4_C12_C8_0"
 #define ICH_AP0R1_EL2   "S3_4_C12_C8_1"
@@ -273,6 +278,31 @@ static void redistributor_init(void)
     putreg32(~0, GICR_IGROUPR0(cpu));
     gicr_wait_rwp();
 
+#ifdef CONFIG_ARM_PMU
+#ifdef CONFIG_PMU_PSEUDO_NMI
+    #define NMI_PRIORITY GIC_PRI_HIGHEST
+
+    u8 *priority_base = GICR_IPRIORITYR0(cpu) + IRQN_PMU;
+    putreg8(NMI_PRIORITY, priority_base);
+    kprintf("priority_base = %p\n", priority_base);
+
+    u32 *gicr_ipriorityr_base = GICR_IPRIORITYR0(cpu) + (IRQN_PMU / 4) * 4;
+    kprintf("GICR_IPRIORITYR0(cpu) = %p, gicr_ipriorityr_base = %p\n", GICR_IPRIORITYR0(cpu), gicr_ipriorityr_base);
+
+    u32 ipriorityr_nmi = getreg32(gicr_ipriorityr_base);
+    kprintf("ipriorityr_nmi = %p\n", ipriorityr_nmi);
+#endif
+
+#ifdef CONFIG_PMU_FIQ
+   // pmu group 0
+   putreg32(0xffffffff & ~bit(IRQN_PMU), GICR_IGROUPR0(cpu));
+   gicr_wait_rwp();
+#endif
+#endif
+
+    uint32_t igrp0 = getreg32(GICR_IGROUPR0(cpu));
+    kprintf("igrp0 = %p\n", igrp0);
+    
     // redistributer config: clear and mask sgi/ppi.
     putreg32(~0, GICR_ICENABLER0(cpu));
     putreg32(~0, GICR_ICPENDR0(cpu));
@@ -291,8 +321,11 @@ static void cpu_interface_init(void)
     kprintf("sre = %p\n", sre);
     MSR(ICC_SRE_EL1, sre);
 
-    // no priority grouping: ICC_BPR1_EL1
+    // no priority grouping 1: ICC_BPR1_EL1
     MSR(ICC_BPR1_EL1, 0);
+
+    // no priority grouping 0: ICC_BPR0_EL1
+    MSR(ICC_BPR0_EL1, 0);
 
     // set priority mask register: ICC_PMR_EL
     MSR(ICC_PMR_EL1, DEFAULT_PMR_VALUE);
@@ -307,6 +340,9 @@ static void cpu_interface_init(void)
 
     // Enable Group1 interrupts: ICC_IGRPEN1_EL1
     MSR(ICC_IGRPEN1_EL1, 1);
+
+    // Enable Group0 interrupts: ICC_IGRPEN0_EL1
+    MSR(ICC_IGRPEN0_EL1, 1);
 
     // Sync at once at the end of cpu interface configuration
     isb();
@@ -393,6 +429,37 @@ void gic_initialize(void)
     cpu_interface_init();
 }
 
+void decode_fiq(void)
+{
+    kprintf("decode_fiq\n");
+
+    uint32_t fiq;
+    uint64_t icciar0;
+
+    timer_update_timestamp();
+
+    MRS(ICC_IAR0_EL1, icciar0);
+    //kprintf("ICC_IAR0_EL1 = %p\n", icciar0);
+    fiq = icciar0 & INTID_MASK;
+
+    /* Ignore spurions IRQs.  ICC_IAR0_EL1 will report 1023 if there is no pending
+     * interrupt.
+     */
+    assert(fiq < NR_IRQS || fiq == 1023);
+    if (fiq< NR_IRQS)
+    {
+        /* Dispatch the interrupt */
+        irq_dispatch(fiq);
+    }
+
+    /* Write to the end-of-interrupt register */
+    MSR(ICC_EOIR0_EL1, icciar0);
+
+    // 恢复当前任务的上下文
+    //kprintf("restore_current_context\n");
+    restore_current_context();
+}
+
 /****************************************************************************
  * Name: decode_irq
  *
@@ -411,12 +478,20 @@ void gic_initialize(void)
  *
  ****************************************************************************/
 
-void decode_irq(void)
+void decode_irq(unsigned long elr, unsigned long spsr)
 {
-    //kprintf("decode_irq\n");
-
     uint32_t irq;
     uint64_t icciar1;
+
+    //kprintf("%s:%d# elr = %p, spsr = %p\n", __FUNCTION__, __LINE__, elr, spsr);
+
+#if 0
+    u64 bench_cnt = bench_get_counter(0);
+    kprintf("3.bench_cnt = %p\n", bench_cnt); 
+
+    u64 cycle_count = bench_get_cycle_count();
+    kprintf("cycle_count = %lu\n", cycle_count);
+#endif
 
     timer_update_timestamp();
 
@@ -424,11 +499,27 @@ void decode_irq(void)
     //kprintf("ICC_IAR1_EL1 = %p\n", icciar1);
     irq = icciar1 & INTID_MASK;
 
+#if 0
+    if (irq == IRQN_PMU) {
+        kprintf("IRQN_PMU\n");
+    } else {
+        kprintf("IRQN_%d\n", irq);
+        // 中断嵌套触发测试
+        // force trigger pmu interrupt overflow
+        MSR("PMSELR_EL0", 0);
+        MSR("PMXEVCNTR_EL0", 0xfff00000);
+
+    }
+
+    MSR(ICC_PMR_EL1, GIC_PRI_IRQ);
+    arch_local_irq_enable();
+    kprintf("%s:%d\n", __FUNCTION__, __LINE__);
+#endif
+    
     /* Ignore spurions IRQs.  ICC_IAR1_EL1 will report 1023 if there is no pending
      * interrupt.
      */
     assert(irq < NR_IRQS || irq == 1023);
-
     if (irq < NR_IRQS)
     {
         /* Dispatch the interrupt */
@@ -437,6 +528,11 @@ void decode_irq(void)
 
     /* Write to the end-of-interrupt register */
     MSR(ICC_EOIR1_EL1, icciar1);
+
+#if 0
+    arch_local_irq_disable();
+    MSR(ICC_PMR_EL1, DEFAULT_PMR_VALUE);
+#endif
 
     // 恢复当前任务的上下文
     //kprintf("restore_current_context\n");

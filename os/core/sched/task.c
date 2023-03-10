@@ -26,7 +26,7 @@
 
 #include "task.h"
 
-#define KERNEL_SCHED_TASK_DEBUG
+//#define KERNEL_SCHED_TASK_DEBUG
 #ifdef KERNEL_SCHED_TASK_DEBUG
 #define task_dbg kdbg
 #define task_err kerr

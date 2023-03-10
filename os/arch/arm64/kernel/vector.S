@@ -23,6 +23,10 @@
     ldr     x1, = CONFIG_DEFAULT_TASK_STACKSIZE
     add     x0, x0, x1
     mov     sp, x0
+
+    // debug save elr and spsr
+    mov     x0, x9
+    mov     x1, x11
 .endm
 
 .macro store_context
@@ -71,7 +75,7 @@ vector:
 
     ventry  cur_el_sync                    // Current EL Synchronous (EL1/2)
     ventry  cur_el_irq                     // IRQ
-    ventry  invalid_vector_entry           // FIQ
+    ventry  cur_el_fiq                     // FIQ
     ventry  cur_el_serr                    // SError
 
     ventry  lower_el_sync                  // Synchronous 64-bit EL0/EL1
@@ -98,6 +102,14 @@ cur_el_irq:
     set_irq_stack
 
     b       decode_irq
+    b .
+
+cur_el_fiq:
+    store_context
+
+    set_irq_stack
+
+    b       decode_fiq
     b .
 
 cur_el_serr:

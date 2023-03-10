@@ -40,6 +40,26 @@ void hello_thread(void)
     }
 }
 
+unsigned long read_evt_cnt(void)
+{
+    unsigned long pmu_event_cnt;
+    MSR("PMSELR_EL0", 0);
+    MRS("PMXEVCNTR_EL0", pmu_event_cnt);
+    return pmu_event_cnt;
+}
+
+void cache_misses_test(void)
+{
+    int i,c=0;
+    for(i=0;i<100000;i++)
+    {
+        c+=i*i;
+        c-=i*100;
+        c+=i*i*i/100;
+    }
+    //printf("c = %d\n", c);
+}
+
 int main(int argc, char *argv[])
 {
     printf("\n\n---hello world---\n\n");
@@ -91,7 +111,7 @@ int main(int argc, char *argv[])
     thread_create(hello_thread, stack);
 #endif
 
-#define LOAD_VM
+//#define LOAD_VM
 #ifdef LOAD_VM
     printf("vm_start = %p, vm_end = %p\n", vm_start, vm_end);
 
@@ -104,10 +124,25 @@ int main(int argc, char *argv[])
 
     while(1)
     {
-        printf("+++\n");
-        printf("main data = %p, bss = %p\n", data++, bss--);
-        printf("---\n");
-        sleep(1);
+        //unsigned long pmu_ccnt_start, pmu_ccnt_end;
+        //MRS("PMCCNTR_EL0", pmu_ccnt_start);
+        
+        //printf("+++\n");
+        //printf("main data = %p, bss = %p\n", data++, bss--);
+        //printf("---\n");
+
+        cache_misses_test();
+
+        unsigned long cnt = read_evt_cnt();
+        //printf("%p\n", cnt);
+
+        //sleep(1);
+        //usleep(100000);
+        
+        //MRS("PMCCNTR_EL0", pmu_ccnt_end);
+
+        //long diff = pmu_ccnt_end - pmu_ccnt_start;
+        //printf("diff = %lu\n", diff);
     }
 }
 

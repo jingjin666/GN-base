@@ -73,12 +73,13 @@ static void svc_handler(void)
 {
     unsigned long ret = -ENOSYS;
     struct tcb *current = this_task();
+    //kprintf("PC = %p, PSTATE = %p\n", current->context.regs[PC], current->context.regs[PSTATE]);
     assert(current);
 
     context_t *ctx = &current->context;
     unsigned long sn = ctx->regs[X8];
 
-    kprintf("svc_handler: sn = %d\n", sn);
+    //kprintf("svc_handler: sn = %d\n", sn);
 
     if (sn < ARRAY_SIZE(svc_handlers)) {
         if (svc_handlers[sn])
@@ -155,7 +156,7 @@ void lel_sync_traps(void)
     MRS(ESR_ELx, esr);
     //kprintf("ESR_ELx = %p\n", esr);
 
-    kprintf("TRAPS# %s\n", esr_get_class_string(esr));
+    //kprintf("TRAPS# %s\n", esr_get_class_string(esr));
 
     unsigned long ec = esr >> ESR_ELx_EC_SHIFT;
     //kprintf("ec = %p\n", ec);

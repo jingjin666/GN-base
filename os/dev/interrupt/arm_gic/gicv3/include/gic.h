@@ -35,7 +35,7 @@ enum irq_numbers
     IRQN_PPI_20 = 20,
     IRQN_PPI_21 = 21,
     IRQN_PPI_22 = 22,
-    IRQN_PPI_23 = 23,
+    IRQN_PPI_23 = 23, IRQN_PMU = IRQN_PPI_23,
     IRQN_PPI_24 = 24,
     IRQN_PPI_25 = 25,
     IRQN_PPI_26 = 26, IRQN_NS_EL2_PHYS_TIMER = IRQN_PPI_26,
@@ -73,7 +73,7 @@ static inline void arch_local_irq_enable(void)
 {
 	asm volatile
     (
-		"msr	daifclr, #2"
+		"msr	daifclr, #3"
 		:
 		:
 		: "memory"
@@ -84,14 +84,14 @@ static inline void arch_local_irq_disable(void)
 {
 	asm volatile
     (
-		"msr	daifset, #2"
+		"msr	daifset, #3"
 		:
 		:
 		: "memory"
     );
 }
 
-void decode_irq(void);
+void decode_irq(unsigned long elr, unsigned long spsr);
 void gic_initialize(void);
 void up_enable_irq(uint32_t irq);
 void up_disable_irq(uint32_t irq);

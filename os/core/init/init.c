@@ -280,6 +280,8 @@ void init_kernel(void)
     kprintf("timer_init\n");
     timer_init();
 
+    pmu_enable_interrupt();
+
     // 打开中断
     kprintf("enable global irq\n");
     arch_local_irq_enable();

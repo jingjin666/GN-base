@@ -22,4 +22,5 @@
 #define UART_VBASE      (MMIO_VBASE + UART_OFFSET)
 
 #define TIMER_CLOCK_HZ  (CONFIG_SYSTEM_CLOCK_HZ)
+#define CPU_FREQ        (1024 * 1024 * 1024UL)
 #endif

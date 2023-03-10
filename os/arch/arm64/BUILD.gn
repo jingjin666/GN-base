@@ -13,6 +13,7 @@ source_set(module_name) {
         "mm/memory.c",
         "hyper/mmu-hyper.c",
         "kernel/cpu.c",
+        "kernel/pmu.c",
         "kernel/fpu.c",
         "kernel/halt.c",
         "kernel/idle.c",

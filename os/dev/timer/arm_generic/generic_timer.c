@@ -25,6 +25,7 @@ void generic_timer_init(timer_t *timer)
 {
     assert(timer);
 
+    // 注意CNTFRQ是系统定时器的主频，并不是CPU主频，QEMU默认的CPU主频为1GHz
     MRS(CNTFRQ, timer_cntfrq);
     kprintf("arm generic timer freq %lld Hz\n", timer_cntfrq);
 
