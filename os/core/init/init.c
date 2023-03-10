@@ -274,14 +274,15 @@ void init_kernel(void)
     idle_task_initialize();
 
     // 创建第一个用户进程
-    root_task_create();
+    //root_task_create();
 
     // timer初始化
     kprintf("timer_init\n");
     timer_init();
 
+#ifdef CONFIG_ARM_PMU
     pmu_enable_interrupt();
-
+#endif
     // 打开中断
     kprintf("enable global irq\n");
     arch_local_irq_enable();

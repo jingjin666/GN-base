@@ -79,7 +79,7 @@ static void svc_handler(void)
     context_t *ctx = &current->context;
     unsigned long sn = ctx->regs[X8];
 
-    //kprintf("svc_handler: sn = %d\n", sn);
+    kprintf("svc_handler: sn = %d\n", sn);
 
     if (sn < ARRAY_SIZE(svc_handlers)) {
         if (svc_handlers[sn])

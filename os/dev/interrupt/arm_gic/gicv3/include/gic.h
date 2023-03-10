@@ -91,7 +91,8 @@ static inline void arch_local_irq_disable(void)
     );
 }
 
-void decode_irq(unsigned long elr, unsigned long spsr);
+struct context;
+void decode_irq(struct context *regs);
 void gic_initialize(void);
 void up_enable_irq(uint32_t irq);
 void up_disable_irq(uint32_t irq);

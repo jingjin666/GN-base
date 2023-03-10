@@ -478,12 +478,18 @@ void decode_fiq(void)
  *
  ****************************************************************************/
 
-void decode_irq(unsigned long elr, unsigned long spsr)
+void __test(u64 sp)
+{
+    kprintf("%s:%d# sp = %p\n", __FUNCTION__, __LINE__, sp);
+}
+
+
+void decode_irq(struct context *regs)
 {
     uint32_t irq;
     uint64_t icciar1;
 
-    //kprintf("%s:%d# elr = %p, spsr = %p\n", __FUNCTION__, __LINE__, elr, spsr);
+    kprintf("%s:%d# regs = %p\n", __FUNCTION__, __LINE__, regs);
 
 #if 0
     u64 bench_cnt = bench_get_counter(0);
@@ -536,7 +542,7 @@ void decode_irq(unsigned long elr, unsigned long spsr)
 
     // 恢复当前任务的上下文
     //kprintf("restore_current_context\n");
-    restore_current_context();
+    //restore_current_context();
 }
 
 /****************************************************************************
