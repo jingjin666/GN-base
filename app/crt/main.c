@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
     char test[10];
     memset(test, 0, 10);
 
-    //hvc(1);
-    //while(1);
+    hvc(1);
+    while(1);
 
 #if 0
     void *addr;
