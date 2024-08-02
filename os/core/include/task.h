@@ -54,6 +54,8 @@ typedef struct mm_area
 	 * end_bss-     未初始化/初始化0数据的结束地址
 	 */
     unsigned long start_bss, end_bss;
+
+    struct chin_elf *elf;
 } mm_area_t;
 
 #ifdef CONFIG_HYPERVISOR_SUPPORT

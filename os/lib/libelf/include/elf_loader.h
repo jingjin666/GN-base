@@ -43,9 +43,14 @@ struct chin_elf
     void *shdr;
 	void *phdr;
 
+	void *symtab;
+    int nsyms;
+    const char *strtab;
+    int strtab_size;
+
     struct list_head segs;
 };
 
 int elf_initialize(struct tcb *task, struct chin_elf *elf);
-
+const char *get_symbol_name_by_addr(uint64_t addr, struct chin_elf *elf);
 #endif

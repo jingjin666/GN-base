@@ -254,6 +254,7 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
                 task->mm.end_stack      = (unsigned long)task->stack + task->stack_size;
                 // map base growup under the stack
                 task->mm.mmap_base      = task->mm.start_stack;
+                task->mm.elf = elf;
             } else if (seg->flags == (PF_R|PF_W)) {
                 elf_dbg("\n---RW SEGMENT---\n");
                 // RW段
@@ -287,6 +288,54 @@ static void populate_segments(struct tcb *task, struct chin_elf *elf)
                 task->mm.start_data, task->mm.end_data, \
                 task->mm.start_bss,  task->mm.end_bss,  \
                 task->mm.start_brk,  task->mm.brk);
+}
+
+const char *get_symbol_name_by_addr(uint64_t addr, struct chin_elf *elf)
+{
+    int i;
+    Elf_Sym *symbol = elf->symtab;
+
+    for (i = 0; i < elf->nsyms; i++) {
+        if (addr >= symbol[i].st_value && addr < (symbol[i].st_value + symbol[i].st_size)) {
+            return elf->strtab + symbol[i].st_name;
+        }
+    }
+    
+    return "NULL";
+}
+
+static void save_sym_str_tab(struct chin_elf *elf)
+{
+    int i;
+    Elf_Shdr *sh;
+
+    for (i = 0, sh = elf->shdr; i < elf->e_shnum; i++, sh++)
+    {
+        if (sh->sh_type == SHT_SYMTAB)
+        {
+            elf->symtab = (void *) (elf->buffer + sh->sh_offset);
+            elf->nsyms = sh->sh_size / sh->sh_entsize;
+            continue;
+        }
+
+        if (sh->sh_type == SHT_STRTAB)
+        {
+            elf->strtab = elf->buffer + sh->sh_offset;
+            elf->strtab_size = sh->sh_size;
+            break;
+        }
+    }
+}
+
+static void dump_symbol(struct chin_elf *elf)
+{
+    int i;
+    Elf_Sym *symbol = elf->symtab;
+
+    for (i = 0; i < elf->nsyms; i++) {
+        kprintf("symbol[%d]: %s, st_name %p st_value %p st_size %p\n", i, elf->strtab + symbol[i].st_name, symbol[i].st_name, symbol[i].st_value, symbol[i].st_size);
+    }
+
 }
 
 int elf_initialize(struct tcb *task, struct chin_elf *elf)
@@ -340,6 +389,9 @@ int elf_initialize(struct tcb *task, struct chin_elf *elf)
     load_segments(elf);
 
     populate_segments(task, elf);
+
+    save_sym_str_tab(elf);
+    // dump_symbol(elf);
 
     remove_segments(elf);
 

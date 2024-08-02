@@ -8,6 +8,7 @@
 #include <fault.h>
 #include <uapi/errors.h>
 #include <esr.h>
+#include <elf_loader.h>
 
 #ifdef CONFIG_HYPERVISOR_SUPPORT
 #define ESR_ELx "ESR_EL2"
@@ -146,6 +147,126 @@ void cel_serr_traps(void)
     kprintf("current el serr_traps\n");
 }
 
+struct stackframe {
+	unsigned long fp;
+	unsigned long pc;
+	unsigned long prev_fp;
+};
+
+static inline void start_backtrace(struct stackframe *frame,
+				   unsigned long fp, unsigned long pc)
+{
+	frame->fp = fp;
+	frame->pc = pc;
+	frame->prev_fp = 0;
+}
+
+struct stack_info {
+	unsigned long low;
+	unsigned long high;
+};
+
+/*
+ * AArch64 PCS assigns the frame pointer to x29.
+ *
+ * A simple function prologue looks like this:
+ * 	sub	sp, sp, #0x10
+ *   	stp	x29, x30, [sp]
+ *	mov	x29, sp
+ *
+ * A simple function epilogue looks like this:
+ *	mov	sp, x29
+ *	ldp	x29, x30, [sp]
+ *	add	sp, sp, #0x10
+ */
+
+/*
+ * Unwind from one frame record (A) to the next frame record (B).
+ *
+ * We terminate early if the location of B indicates a malformed chain of frame
+ * records (e.g. a cycle), determined based on the location and fp value of A
+ * and the location (but not the fp value) of B.
+ */
+
+#define READ_ONCE_NOCHECK(a)           (*(volatile uint64_t *)&(a))
+
+static inline int on_accessible_stack(const struct tcb *tsk,
+				       unsigned long sp,
+				       struct stack_info *info)
+{
+    unsigned long low = (unsigned long)tsk->mm.start_stack;
+	unsigned long high = (unsigned long)tsk->mm.end_stack;
+
+	if (!low)
+		return -1;
+
+	if (sp < low || sp >= high)
+		return -1;
+
+	if (info) {
+		info->low = low;
+		info->high = high;
+	}
+
+	return 0;
+}
+
+int unwind_frame(struct tcb *tsk, struct stackframe *frame)
+{
+	unsigned long fp = frame->fp;
+	struct stack_info info;
+
+	if (fp & 0xf)
+		return -EINVAL;
+
+	if (on_accessible_stack(tsk, fp, &info) != 0)
+		return -EINVAL;
+
+	/*
+	 * Record this frame record's values and location. The prev_fp and
+	 * prev_type are only meaningful to the next unwind_frame() invocation.
+	 */
+	frame->fp = READ_ONCE_NOCHECK(*(unsigned long *)(fp));
+	frame->pc = READ_ONCE_NOCHECK(*(unsigned long *)(fp + 8));
+
+	frame->prev_fp = fp;
+
+	/*
+	 * Frames created upon entry from EL0 have NULL FP and PC values, so
+	 * don't bother reporting these. Frames created by __noreturn functions
+	 * might have a valid FP even if PC is bogus, so only terminate where
+	 * both are NULL.
+	 */
+	if (!frame->fp && !frame->pc)
+		return -EINVAL;
+
+	return 0;
+}
+
+void dump_backtrace(void)
+{
+    struct stackframe frame;
+
+    struct tcb *current = this_task();
+
+    kprintf("%s# %s TID:%d TGID:%d\n", __FUNCTION__, current->name), current->tgid, current->tid;
+    
+    u64 pc = current->context.regs[PC];
+    u64 sp = current->context.regs[SP];
+    u64 fp = current->context.regs[FP];
+    u64 lr = current->context.regs[LR];
+    kprintf("PC %p SP %p FP %p LR %p\n", pc, sp, fp, lr);
+
+    start_backtrace(&frame, fp, pc);
+
+    kprintf("PC >>> %p :: %s\n", frame.pc, get_symbol_name_by_addr(pc, current->mm.elf));
+	kprintf("PC >>> %p :: %s\n", lr, get_symbol_name_by_addr(lr, current->mm.elf));
+
+    while (!unwind_frame(current, &frame)) {
+        kprintf("PC >>> %p :: %s\n", frame.pc, get_symbol_name_by_addr(frame.pc, current->mm.elf));
+    }
+}
+
 void lel_sync_traps(void)
 {
     unsigned long esr;
@@ -178,6 +299,8 @@ void lel_sync_traps(void)
             break;
         case ESR_ELx_EC_DABT_LOW:
             kprintf("Data Abort from a lower Exception level!\n");
+            dump_backtrace();
+
             MRS(FAR_ELx, far_elx);
             MRS(AFSR0_ELx, afsr0_elx);
             kprintf("DFAR = %p, ADFSR = %p\n", far_elx, afsr0_elx);

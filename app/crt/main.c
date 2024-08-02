@@ -49,6 +49,26 @@ void hello_thread(void)
     }
 }
 
+static void core_dump_test_deep3(void)
+{
+    int *null = NULL;
+    *null = 0x1;
+}
+
+static void core_dump_test_deep2(void)
+{
+    core_dump_test_deep3();
+}
+
+static void core_dump_test_deep1(void)
+{
+    core_dump_test_deep2();
+}
+static void core_dump_test(void)
+{
+    core_dump_test_deep1();
+}
+
 int main(int argc, char *argv[])
 {
     printf("\n\n---hello world---\n\n");
@@ -60,6 +80,7 @@ int main(int argc, char *argv[])
     char test[10];
     memset(test, 0, 10);
 
+    core_dump_test();
     //hvc(1);
     //while(1);
 
