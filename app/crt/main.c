@@ -57,15 +57,18 @@ static void core_dump_test_deep3(void)
 
 static void core_dump_test_deep2(void)
 {
+    printf("%s:%d\n", __FUNCTION__, __LINE__);
     core_dump_test_deep3();
 }
 
 static void core_dump_test_deep1(void)
 {
+    printf("%s:%d\n", __FUNCTION__, __LINE__);
     core_dump_test_deep2();
 }
 static void core_dump_test(void)
 {
+    printf("%s:%d\n", __FUNCTION__, __LINE__);
     core_dump_test_deep1();
 }
 

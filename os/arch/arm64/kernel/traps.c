@@ -260,7 +260,10 @@ void dump_backtrace(void)
     start_backtrace(&frame, fp, pc);
 
     kprintf("PC >>> %p :: %s\n", frame.pc, get_symbol_name_by_addr(pc, current->mm.elf));
-	kprintf("PC >>> %p :: %s\n", lr, get_symbol_name_by_addr(lr, current->mm.elf));
+    u64 _pc = READ_ONCE_NOCHECK(*(unsigned long *)(fp + 8));
+    if (_pc != lr && get_symbol_name_by_addr(lr, current->mm.elf) != get_symbol_name_by_addr(pc, current->mm.elf)) {
+        kprintf("PC >>> %p :: %s\n", lr, get_symbol_name_by_addr(lr, current->mm.elf));
+    }
 
     while (!unwind_frame(current, &frame)) {
         kprintf("PC >>> %p :: %s\n", frame.pc, get_symbol_name_by_addr(frame.pc, current->mm.elf));

@@ -28,6 +28,7 @@ clean:
 	@echo "clean..."
 	@cd out && ninja -t clean
 	@rm -rf $(TOP_DIR)/build/config/env.gni
+	@rm -rf $(TOP_DIR)/app/musl-1.2.3/out/lib/libc.a
 	@rm -rf $(TOP_DIR)/os/linker.lds
 
 $(TOP_DIR)/os/linker.lds:$(TOP_DIR)/os/include/chinos/config.h
