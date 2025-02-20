@@ -50,6 +50,14 @@ switch_to_el1_from_el2:
     bic     tmp, tmp, #SCTLR_ELx_M
     msr     sctlr_el2, tmp
 
+#ifdef CONFIG_ARM64_VHE
+	mrs     x1, ID_AA64MMFR1_EL1
+	ubfx    x1, x1, #8, #4
+#else
+    mov	    x1, xzr
+#endif
+	cbnz	x1, enable_vhe
+
     // 从EL2切换到EL1
     /* Initialize HCR_EL2 */
 	ldr	    tmp, =(HCR_EL2_RW_AARCH64 | HCR_EL2_HCD_DIS)
@@ -63,6 +71,11 @@ switch_to_el1_from_el2:
 	adr     tmp, el1_entry
 	msr	    elr_el2, tmp
 	eret
+
+enable_vhe:
+    ldr	    tmp, =(HCR_EL2_RW_AARCH64 | HCR_EL2_E2H | HCR_EL2_TGE)
+	msr     hcr_el2, tmp
+	isb
 
 el1_entry:
     // 关闭EL1的指令和数据缓存和MMU

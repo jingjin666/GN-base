@@ -43,7 +43,9 @@
 /*
  * HCR_EL2 bits definitions
  */
+#define HCR_EL2_E2H		    (1 << 34)
 #define HCR_EL2_RW_AARCH64	(1 << 31) /* EL1 is AArch64                   */
 #define HCR_EL2_HCD_DIS		(1 << 29) /* Hypervisor Call disabled         */
+#define HCR_EL2_TGE		    (1 << 27)
 
 #endif

@@ -44,6 +44,10 @@ void generic_timer_init(timer_t *timer)
     MRS(CNT_CTL, cnt_ctl);
     kprintf("cnt_ctl = %p\n", cnt_ctl);
 
+#ifdef CONFIG_ARM64_VHE
+    timer->irq = default_generic_timer_desc.ns_el2_irq_phys;
+#else
     timer->irq = default_generic_timer_desc.el1_irq_virt;
+#endif
     timer->clock_freq = timer_cntfrq;
 }

@@ -19,11 +19,21 @@
 #define CNTV_TVAL       "cntv_tval_el0"
 #define CNTV_CVAL       "cntv_cval_el0"
 
+#define CNTHP_CTL       "cnthp_ctl_el2"
+#define CNTHP_TVAL      "cnthp_tval_el2"
+#define CNTHP_CVAL      "cnthp_cval_el2"
+
 #define CNTFRQ          "cntfrq_el0"
 
+#ifdef CONFIG_ARM64_VHE
+#define CNT_CTL         CNTHP_CTL
+#define CNT_TVAL        CNTHP_TVAL
+#define CNT_CVAL        CNTHP_CVAL
+#else
 #define CNT_CTL         CNTV_CTL
 #define CNT_TVAL        CNTV_TVAL
 #define CNT_CVAL        CNTV_CVAL
+#endif
 
 #define TICKS_PER_NS            (TIMER_CLOCK_HZ / ULL(1000) / ULL(1000) / ULL(1000))
 #define TICKS_PER_US            (TIMER_CLOCK_HZ / ULL(1000) / ULL(1000))
